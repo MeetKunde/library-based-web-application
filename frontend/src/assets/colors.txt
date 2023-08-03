@@ -1,0 +1,3 @@
+Logo colors:
+#2c3c5b
+#0ac5a8
