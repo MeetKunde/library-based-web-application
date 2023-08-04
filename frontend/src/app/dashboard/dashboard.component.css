@@ -3,7 +3,7 @@ mat-sidenav {
     width: 20%;
     height: calc(100vh - 100px);
     border-right: none;
-    background: #2c3c5b;
+    background: #2C3C5B;
     color: white;
     border-radius: 10px;
     padding: 16px;
@@ -22,4 +22,35 @@ mat-sidenav {
 mat-sidenav-container {
     height: calc(100vh - 65px);
     box-shadow: none!important;
+}
+
+.grid-container {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1%;
+    padding: 2%;
+}
+
+.creator-icon-button {
+    stroke: white;
+    fill: white;
+    color: white;
+}
+
+.creator-icon-button:hover {
+    stroke: #0AC5A8;
+    fill: #0AC5A8;
+    color: #0AC5A8;
+}
+
+.creator-icon-button-selected {
+    stroke: #0AC5A8;
+    fill: #0AC5A8;
+    color: #0AC5A8;
+}
+
+.creator-icon-button-selected:hover {
+    stroke: #0AC5A8;
+    fill: #0AC5A8;
+    color: #0AC5A8;
 }

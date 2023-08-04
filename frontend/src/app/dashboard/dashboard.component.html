@@ -1,6 +1,10 @@
 <mat-sidenav-container>
     <mat-sidenav mode="side" opened>
-        
+        <div class="grid-container">
+            <button mat-icon-button [class.creator-icon-button]="Board.getAction() != button.actionToDo" [class.creator-icon-button-selected]="Board.getAction() == button.actionToDo" *ngFor="let button of actionButtons" matTooltip="{{button.tooltip}}" (click)="Board.changeAction(button.actionToDo)">
+                <mat-icon svgIcon="{{button.name}}"></mat-icon>
+            </button>
+        </div>
     </mat-sidenav>
     <mat-sidenav-content> 
         <div id="jxgbox" class="content mat-elevation-z8 jxgbox">
