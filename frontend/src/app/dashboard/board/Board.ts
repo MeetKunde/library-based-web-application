@@ -33,6 +33,16 @@ export class Board {
 
         Board.capitalLettersCounter = 0;
         Board.lowercaseLettersCounter = 0;
+
+        /*
+        const p1 = Board.board.create('point', [0, 0]);
+        const p2 = Board.board.create('point', [-30, -10]);
+        const p3 = Board.board.create('point', [-10, 50]);
+        const p4 = Board.board.create('point', [0, 0]);
+
+        Board.createSegment(p1, p2);
+        Board.createSegment(p3, p4);
+        */
     }
 
     static setAction(action: ActionEnum): void {
@@ -113,24 +123,6 @@ export class Board {
         return point;
     }
 
-
-    private static createIntersectionPoint(x: number, y: number, shape1: any, shape2: any, i: number, j: number): any {
-        const point = Board.board.create('point', [x, y], {
-            name: Board.getNextCapitalLetter(), 
-            label: {fixed:false},
-            size: Board.POINT_SIZE,
-            color: Board.PRIMARY_COLOR,
-            highlightFillColor: Board.SECONDARY_COLOR,
-            highlightStrokeColor: Board.SECONDARY_COLOR,
-            showInfobox: false
-        });
-
-        point.makeIntersection(shape1, shape2, i, j);
-        
-        point.on('down', (event: any) => { Board.handleShapeClick(event, point); });
-
-        return point;
-    }
     private static createSegment(point1: any, point2: any): any {
         const segment = Board.board.create('segment', [point1, point2], {
             strokeWidth: Board.STROKE_WIDTH,
@@ -291,12 +283,15 @@ export class Board {
             if(el.elType == 'segment' || el.elType == 'line' || el.elType == 'circle') {
                 const point1 = JXG.Math.Geometry.meet(shape.stdform, el.stdform, 0, Board.board);
                 const point2 = JXG.Math.Geometry.meet(shape.stdform, el.stdform, 1, Board.board);
-
-                console.log(point1)
-                console.log(point2)
                 
-                Board.createIntersectionPoint(point1.usrCoords[1], point1.usrCoords[2], shape, el, 0, 0);
-                Board.createIntersectionPoint(point2.usrCoords[1], point2.usrCoords[2], shape, el, 1, 1);                    
+                const intersection1 = Board.createPoint(point1.usrCoords[1], point1.usrCoords[2]);
+                intersection1.makeIntersection(shape, el, 0, 0);
+
+
+                if(el.elType == 'circle' || shape.elType == 'circle') {
+                    const intersection2 =  Board.createPoint(point2.usrCoords[1], point2.usrCoords[2]);  
+                    intersection2.makeIntersection(shape, el, 1, 1);  
+                }                
             }
         }
     }
