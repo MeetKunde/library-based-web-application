@@ -15,17 +15,13 @@ export class Board {
 
     private static capitalLettersCounter = 0;
     private static lowercaseLettersCounter = 0;
-    
-    private static points: any[] = [];
-    private static segments: any[] = [];
-    private static lines: any[] = [];
-    private static rays: any[] = [];
-    private static circles: any[] = [];
 
     private static shapesAccumlator: any[];
 
     private static board: any;
-    private  static action: ActionEnum;
+    private static action: ActionEnum;
+    private static shapeClicked: boolean;
+
 
     private constructor() { }
 
@@ -33,23 +29,10 @@ export class Board {
         Board.board = JXG.JSXGraph.initBoard(boardId, {boundingbox: bounds, axis: showAxis, keepAspectRatio: true});
         Board.board.on('down', Board.handleBoardClick);
         Board.action = ActionEnum.NONE;
+        Board.shapeClicked = false;
 
         Board.capitalLettersCounter = 0;
         Board.lowercaseLettersCounter = 0;
-
-        Board.points = [];
-        Board.segments = [];
-        Board.lines = [];
-        Board.rays = [];
-        Board.circles = [];
-
-        const p1 = Board.createPoint(50, 50);
-        const p2 = Board.createPoint(30, 30);
-        const p3 = Board.createPoint(20, 10);
-        const p4 = Board.createPoint(0, 20);
-        const s1 = Board.createSegment(p1, p2);
-        const s2 = Board.createSegment(p3, p4);
-
     }
 
     static setAction(action: ActionEnum): void {
@@ -101,7 +84,7 @@ export class Board {
     private static createPoint(x: number, y: number): any {
         const point = Board.board.create('point', [x, y], { 
             name: Board.getNextCapitalLetter(), 
-            label:{fixed:false},
+            label: {fixed:false},
             size: Board.POINT_SIZE,
             color: Board.PRIMARY_COLOR,
             highlightFillColor: Board.SECONDARY_COLOR,
@@ -109,11 +92,45 @@ export class Board {
             showInfobox: false
         });
 
-        Board.points.push(point);
+        point.on('down', (event: any) => { event.stopPropagation(); Board.handleShapeClick(event, point); });
 
         return point;
     }
 
+    private static createGliderPoint(x: number, y: number, shape: any): any {
+        const point = Board.board.create('glider', [x, y, shape], {
+            name: Board.getNextCapitalLetter(), 
+            label: {fixed:false},
+            size: Board.POINT_SIZE,
+            color: Board.PRIMARY_COLOR,
+            highlightFillColor: Board.SECONDARY_COLOR,
+            highlightStrokeColor: Board.SECONDARY_COLOR,
+            showInfobox: false
+        });
+
+        point.on('down', (event: any) => { Board.handleShapeClick(event, point); });
+
+        return point;
+    }
+
+
+    private static createIntersectionPoint(x: number, y: number, shape1: any, shape2: any, i: number, j: number): any {
+        const point = Board.board.create('point', [x, y], {
+            name: Board.getNextCapitalLetter(), 
+            label: {fixed:false},
+            size: Board.POINT_SIZE,
+            color: Board.PRIMARY_COLOR,
+            highlightFillColor: Board.SECONDARY_COLOR,
+            highlightStrokeColor: Board.SECONDARY_COLOR,
+            showInfobox: false
+        });
+
+        point.makeIntersection(shape1, shape2, i, j);
+        
+        point.on('down', (event: any) => { Board.handleShapeClick(event, point); });
+
+        return point;
+    }
     private static createSegment(point1: any, point2: any): any {
         const segment = Board.board.create('segment', [point1, point2], {
             strokeWidth: Board.STROKE_WIDTH,
@@ -121,18 +138,10 @@ export class Board {
             highlightStrokeColor: Board.SECONDARY_COLOR
         });
 
-        segment.needsRegularUpdate = true;
-        segment.on('down', function(event: any) {
-            var fingerIndex = 0;
-            var coords = Board.getMouseCoords(event, fingerIndex);
-            console.log(coords);
-            const point = Board.createPoint(coords.scrCoords[1], coords.scrCoords[2]);
-            segment.addPoint(point);
-        //addPointToSegment(segment, [coords.usrCoords[1], coords.usrCoords[2]]);
-        });
+        segment.on('down', (event: any) => { Board.handleShapeClick(event, segment); });
 
-        Board.segments.push(segment);
-
+        Board.solveCollisions(segment);
+        
         return segment;
     }
 
@@ -144,7 +153,9 @@ export class Board {
             highlightStrokeColor: Board.SECONDARY_COLOR
         });
 
-        Board.rays.push(ray);
+        ray.on('down', (event: any) => { Board.handleShapeClick(event, ray); });
+
+        Board.solveCollisions(ray);
 
         return ray;
     }
@@ -156,7 +167,9 @@ export class Board {
             highlightStrokeColor: Board.SECONDARY_COLOR
         });
 
-        Board.lines.push(line);
+        line.on('down', (event: any) => { Board.handleShapeClick(event, line); });
+
+        Board.solveCollisions(line);
 
         return line;
     }
@@ -169,27 +182,58 @@ export class Board {
             highlightStrokeColor: Board.SECONDARY_COLOR
         });
 
-        Board.circles.push(circle);
+        circle.on('down', (event: any) => { Board.handleShapeClick(event, circle); });
+
+        Board.solveCollisions(circle);
 
         return circle;
     }
 
-    private static getMouseCoords(event: any, fingerIndex: any): any {
-        var pos = Board.board.getMousePosition(event, fingerIndex);
-        return new JXG.Coords(JXG.COORDS_BY_SCREEN, pos, Board.board);
+    private static handleBoardClick(event: any): void {
+        if(!Board.shapeClicked) {
+            Board.handleClick(event, (x: number, y: number) => {
+                return Board.createPoint(x, y);
+            });
+        }
+        Board.shapeClicked = false;
     }
 
-    private static solveCollisions(): void {
-        
+    private static handleShapeClick(event: any, shape: any): void {
+        Board.shapeClicked = true;
+        event.stopPropagation();
+
+        if(shape.elementClass === JXG.OBJECT_CLASS_POINT) {
+            Board.handleClick(event, (x: number, y: number) => {
+                return shape;
+            });
+        }
+        else {
+            Board.handleClick(event, (x: number, y: number) => {
+                return Board.createGliderPoint(x, y, shape);
+            });
+        }
     }
 
-    private static solveClick(x: number, y: number): void {
+    private static handleClick(event: any, createPoint: (x: number, y: number) => any): any {
+        const coords = Board.getCoords(event);
+        const x = coords[0];
+        const y = coords[1];
+        const canBeCreated = coords[2];
+        const duplicationPoint = coords[3];
+
         if(Board.action == ActionEnum.CREATE_POINT) {
-            Board.createPoint(x, y);
+            if(canBeCreated) {
+                createPoint(x, y);
+            }
         }
         else if(Board.action == ActionEnum.CREATE_SEGMENT || Board.action == ActionEnum.CREATE_RAY || Board.action == ActionEnum.CREATE_LINE || Board.action == ActionEnum.CREATE_CIRCLE) {
-            const point = Board.createPoint(x, y);
-            Board.shapesAccumlator.push(point);
+            if(canBeCreated) {
+                const point = createPoint(x, y);
+                Board.shapesAccumlator.push(point);
+            }
+            else {
+                Board.shapesAccumlator.push(duplicationPoint);
+            }
 
             if(Board.shapesAccumlator.length == 2) {
                 switch(Board.action) {
@@ -214,23 +258,46 @@ export class Board {
         }
     }
 
-    private static handleBoardClick(event: any): void {
+    private static getCoords(event: any): [x: number, y: number, canCreate: boolean, duplication: any] {
         var fingerIndex = undefined;
         if(event[JXG.touchProperty]) {
             fingerIndex = 0;
         }
 
-        var coords = Board.getMouseCoords(event, fingerIndex);
+        var pos = Board.board.getMousePosition(event, fingerIndex);
+        var coords = new JXG.Coords(JXG.COORDS_BY_SCREEN, pos, Board.board);
+
         var canCreate = true;
+        var duplication = undefined;
         for(let el in Board.board.objects) {
             if(JXG.isPoint(Board.board.objects[el]) && Board.board.objects[el].hasPoint(coords.scrCoords[1], coords.scrCoords[2])) {
                 canCreate = false;
+                duplication = Board.board.objects[el];
                 break;
             }
         }
- 
-        if(canCreate) {
-            Board.solveClick(coords.usrCoords[1], coords.usrCoords[2]);
+
+        return [coords.usrCoords[1], coords.usrCoords[2], canCreate, duplication];
+    }
+
+    private static solveCollisions(shape: any): void {
+        for(let idx in Board.board.objects) {
+            var el = Board.board.objects[idx];
+
+            if(el.id == shape.id) {
+                continue;
+            }
+
+            if(el.elType == 'segment' || el.elType == 'line' || el.elType == 'circle') {
+                const point1 = JXG.Math.Geometry.meet(shape.stdform, el.stdform, 0, Board.board);
+                const point2 = JXG.Math.Geometry.meet(shape.stdform, el.stdform, 1, Board.board);
+
+                console.log(point1)
+                console.log(point2)
+                
+                Board.createIntersectionPoint(point1.usrCoords[1], point1.usrCoords[2], shape, el, 0, 0);
+                Board.createIntersectionPoint(point2.usrCoords[1], point2.usrCoords[2], shape, el, 1, 1);                    
+            }
         }
     }
 };
