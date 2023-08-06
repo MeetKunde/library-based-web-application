@@ -1,4 +1,5 @@
 import { ActionEnum } from "./ActionEnum";
+import { BoardScheme } from "./BoardScheme";
 
 declare const JXG: any 
 
@@ -22,6 +23,7 @@ export class Board {
     private static action: ActionEnum;
     private static shapeClicked: boolean;
 
+    private static boardScheme: BoardScheme;
 
     private constructor() { }
 
@@ -38,17 +40,32 @@ export class Board {
 
         Board.shapesAccumlator = [];
 
-        //Board.correctIntersectionPoints();
-
         /*
+        var p1 = Board.board.create('point', [-1, 4])
+        var p2 = Board.board.create('point', [4, 1])
+        var p3 = Board.board.create('point', [-2, -3])
+
+        var li1 = Board.board.create('line', [p1, p2], {strokeColor:'black', lastArrow:true})
+        var li2 = Board.board.create('line', [p1, p3], {lastArrow:true})
+
+        var a1 = Board.board.create('angle', [p2, p1, p3], { radius:1 });
+        //a2 = Board.board.create('angle', [li1, li2, 1, -1], { radius:2 });
+
+
+        a1.setAngle(function() {
+            return Math.PI * 90.0 / 180.0;
+        });
+        Board.board.update(); // This is necessary
+        */
+        
         const p1 = Board.board.create('point', [0, 0]);
         const p2 = Board.board.create('point', [-30, -10]);
         const p3 = Board.board.create('point', [-10, 50]);
-        const p4 = Board.board.create('point', [0, 0]);
 
-        Board.createSegment(p1, p2);
-        Board.createSegment(p3, p4);
-        */
+        const s1 = Board.createSegment(p1, p2);
+        const s2 = Board.createSegment(p1, p2);
+        console.log(Board.board.objects)
+        
     }
 
     static setAction(action: ActionEnum): void {
@@ -132,7 +149,9 @@ export class Board {
     }
 
     private static createSegment(point1: any, point2: any): any {
-        const segment = Board.board.create('segment', [point1, point2], {
+        const segment = Board.board.create('line', [point1, point2], {
+            straightFirst: false,
+            straightLast: false,
             strokeWidth: Board.STROKE_WIDTH,
             color: Board.PRIMARY_COLOR,
             highlightStrokeColor: Board.SECONDARY_COLOR
@@ -189,10 +208,56 @@ export class Board {
         return circle;
     }
 
+    private static createPerpendicularLine(baseLine: any, basePoint: any): any {
+        const line = Board.board.create('perpendicular', [baseLine, basePoint], {
+            strokeWidth: Board.STROKE_WIDTH,
+            color: Board.PRIMARY_COLOR,
+            highlightStrokeColor: Board.SECONDARY_COLOR
+        });
+
+        line.on('down', (event: any) => { Board.handleShapeClick(event, line); });
+
+        Board.solveCollisions(line);
+
+        return line;
+    }
+
+    private static createParallelLine(baseLine: any, basePoint: any): any {
+        const line = Board.board.create('parallel', [baseLine, basePoint], {
+            strokeWidth: Board.STROKE_WIDTH,
+            color: Board.PRIMARY_COLOR,
+            highlightStrokeColor: Board.SECONDARY_COLOR
+        });
+
+        line.on('down', (event: any) => { Board.handleShapeClick(event, line); });
+
+        Board.solveCollisions(line);
+
+        return line;
+    }
+
+    private static divideSegment(point1: any, point2: any, n: number): any[] {
+        const coords1 = [point1.coords.usrCoords[1], point1.coords.usrCoords[2]]; 
+        const coords2 = [point2.coords.usrCoords[1], point2.coords.usrCoords[2]]; 
+
+        return [];
+    }
+
+    private static divideAngle(point1: any, point2: any, point3: any, n: number): any[] {
+
+        return [];
+    }
+
+    private static createMidPerpendicular(point1: any, point2: any): any {
+        const midPoint = Board.divideSegment(point1, point2, 2)[1];
+        
+        return this.createPerpendicularLine
+    }   
+
     private static handleBoardClick(event: any): void {
         if(!Board.shapeClicked) {
             event.stopPropagation();
-            Board.handleClick(event, (x: number, y: number) => {
+            Board.handleClick(event, undefined, (x: number, y: number) => {
                 return Board.createPoint(x, y);
             });
         }
@@ -205,19 +270,19 @@ export class Board {
             event.stopPropagation();
 
             if(shape.elementClass === JXG.OBJECT_CLASS_POINT) {
-                Board.handleClick(event, (x: number, y: number) => {
+                Board.handleClick(event, shape, (x: number, y: number) => {
                     return shape;
                 });
             }
             else {
-                Board.handleClick(event, (x: number, y: number) => {
+                Board.handleClick(event, shape, (x: number, y: number) => {
                     return Board.createGliderPoint(x, y, shape);
                 });
             }
         }
     }
 
-    private static handleClick(event: any, createPoint: (x: number, y: number) => any): any {
+    private static handleClick(event: any, shape: any | undefined, createPoint: (x: number, y: number) => any): any { //
         const coords = Board.getCoords(event);
         const x = coords[0];
         const y = coords[1];
@@ -229,7 +294,12 @@ export class Board {
                 createPoint(x, y);
             }
         }
-        else if(Board.action == ActionEnum.CREATE_SEGMENT || Board.action == ActionEnum.CREATE_RAY || Board.action == ActionEnum.CREATE_LINE || Board.action == ActionEnum.CREATE_CIRCLE) {
+        else if(Board.action == ActionEnum.CREATE_SEGMENT || 
+            Board.action == ActionEnum.CREATE_RAY || 
+            Board.action == ActionEnum.CREATE_LINE || 
+            Board.action == ActionEnum.CREATE_CIRCLE ||
+            Board.action == ActionEnum.CREATE_MID_PERPENDICULAR) {
+
             if(canBeCreated) {
                 const point = createPoint(x, y);
                 Board.shapesAccumlator.push(point);
@@ -251,6 +321,38 @@ export class Board {
                         break;
                     case ActionEnum.CREATE_CIRCLE:
                         Board.createCircle(Board.shapesAccumlator[0], Board.shapesAccumlator[1]);
+                        break;
+                    case ActionEnum.CREATE_MID_PERPENDICULAR:
+
+                    default:
+                        // unreachable
+                        break;
+                }
+                Board.shapesAccumlator = [];
+            }
+        }
+        else if(Board.action == ActionEnum.CREATE_PERPENDICULAR_LINE || 
+            Board.action == ActionEnum.CREATE_PARALLEL_LINE) {
+
+            if(shape !== undefined && shape.elType == 'line') {
+                if(Board.shapesAccumlator.length == 0) {
+                    Board.shapesAccumlator.push(shape);
+                }
+                //else if(Board.shapesAccumlator.length == 1) {
+                //    Board.shapesAccumlator[0] = shape;
+                //}
+            }
+            else if(Board.shapesAccumlator.length == 1) {
+                Board.shapesAccumlator.push(createPoint(x, y));
+            }
+
+            if(Board.shapesAccumlator.length == 2) {
+                switch(Board.action) {
+                    case ActionEnum.CREATE_PERPENDICULAR_LINE:
+                        Board.createPerpendicularLine(Board.shapesAccumlator[0], Board.shapesAccumlator[1]);
+                        break;
+                    case ActionEnum.CREATE_PARALLEL_LINE:
+                        Board.createParallelLine(Board.shapesAccumlator[0], Board.shapesAccumlator[1]);
                         break;
                     default:
                         // unreachable
@@ -297,7 +399,7 @@ export class Board {
                 continue;
             }
 
-            if(el.elType == 'segment' || el.elType == 'line' || el.elType == 'circle') {
+            if(el.elType == 'line' || el.elType == 'circle') {
                 const point1 = JXG.Math.Geometry.meet(shape.stdform, el.stdform, 0, Board.board);
                 const point2 = JXG.Math.Geometry.meet(shape.stdform, el.stdform, 1, Board.board);
 
@@ -315,8 +417,6 @@ export class Board {
     }
 
     private static correctIntersectionPoints(): any {
-        console.log('correcting...');
-
         var intersectionPoints: any[] = [];
         var nonIntersectionPoints: any[] = [];
 
@@ -336,7 +436,6 @@ export class Board {
             var newOpacity = 1;
             for(const nip of nonIntersectionPoints) {
                 const dist = Board.distance(ip, nip);
-                //console.log(dist)
                 
                 if(dist < 1 || Number.isNaN(dist)) {
                     newOpacity = 0;

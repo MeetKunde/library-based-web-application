@@ -3,6 +3,7 @@ import { MatIconRegistry } from '@angular/material/icon';
 import { DomSanitizer } from '@angular/platform-browser';
 import { Board } from './board/Board'
 import { ActionEnum } from './board/ActionEnum';
+import { MatSnackBar, MatSnackBarConfig } from '@angular/material/snack-bar';
 
 @Component({
   selector: 'app-dashboard',
@@ -19,8 +20,8 @@ export class DashboardComponent {
     {name: 'line', tooltip: 'Create Line', imagePath: '../../assets/button-images/LineIcon.svg', actionToDo: ActionEnum.CREATE_LINE},
     {name: 'ray', tooltip: 'Create Ray', imagePath: '../../assets/button-images/RayIcon.svg', actionToDo: ActionEnum.CREATE_RAY},
     {name: 'circle', tooltip: 'Create Circle', imagePath: '../../assets/button-images/CircleIcon.svg', actionToDo: ActionEnum.CREATE_CIRCLE},
-    {name: 'perpendicularity', tooltip: 'Set Perpendicularity', imagePath: '../../assets/button-images/PerpendicularityIcon.svg', actionToDo: ActionEnum.SET_PERPENDICULARITY},
-    {name: 'parallelism', tooltip: 'Set Parallelism', imagePath: '../../assets/button-images/ParallelismIcon.svg', actionToDo: ActionEnum.SET_PARALLELISM},
+    {name: 'perpendicularity', tooltip: 'Create Perpendicular Line', imagePath: '../../assets/button-images/PerpendicularityIcon.svg', actionToDo: ActionEnum.CREATE_PERPENDICULAR_LINE},
+    {name: 'parallelism', tooltip: 'Create Parallel Line', imagePath: '../../assets/button-images/ParallelismIcon.svg', actionToDo: ActionEnum.CREATE_PARALLEL_LINE},
     {name: 'mid-perpendicular', tooltip: 'Create Mid-Perpendicular', imagePath: '../../assets/button-images/MidPerpendicularIcon.svg', actionToDo: ActionEnum.CREATE_MID_PERPENDICULAR},
     {name: 'bisector', tooltip: 'Create Bisector', imagePath: '../../assets/button-images/BisectorIcon.svg', actionToDo: ActionEnum.CREATE_BISECTOR},
     {name: 'setLength', tooltip: 'Set Segment Length', imagePath: '../../assets/button-images/SegmentLengthIcon.svg', actionToDo: ActionEnum.SET_SEGMENT_LENGHT},
@@ -52,11 +53,12 @@ export class DashboardComponent {
   ];
 
   constructor(
-    private matIconRegistry: MatIconRegistry,
-    private domSanitizer: DomSanitizer) { 
-      this.actionButtons.forEach(button => this.matIconRegistry.addSvgIcon(
+    private _matIconRegistry: MatIconRegistry,
+    private _domSanitizer: DomSanitizer,
+    private _snackBar: MatSnackBar) { 
+      this.actionButtons.forEach(button => this._matIconRegistry.addSvgIcon(
         button.name,
-        this.domSanitizer.bypassSecurityTrustResourceUrl(button.imagePath)
+        this._domSanitizer.bypassSecurityTrustResourceUrl(button.imagePath)
       ));
     }
 
@@ -64,5 +66,51 @@ export class DashboardComponent {
     new Promise(resolve => setTimeout(resolve, 100)).then(() => {
       Board.initialize('jxgbox', [-100, 100, 100, -100], false);
     });
+  }
+
+  openSnackBar() {
+    const duration = 3000;
+
+    switch(Board.getAction()) {
+      case ActionEnum.CREATE_POINT:
+        this._snackBar.open('Click on board or on shape', 'OK!', { duration: duration });
+        break;
+      case ActionEnum.CREATE_SEGMENT:
+        this._snackBar.open('Create/select two points', 'OK!', { duration: duration });
+        break;
+      case ActionEnum.CREATE_LINE:
+        this._snackBar.open('Create/select two points', 'OK!', { duration: duration });
+        break;
+      case ActionEnum.CREATE_RAY:
+        this._snackBar.open('Create/select two points', 'OK!', { duration: duration });
+        break;
+      case ActionEnum.CREATE_CIRCLE:
+        this._snackBar.open('Create/select two points', 'OK!', { duration: duration });
+        break;
+      case ActionEnum.CREATE_PERPENDICULAR_LINE:
+        this._snackBar.open('Select line and create/select point', 'OK!', { duration: duration });
+        break;
+      case ActionEnum.CREATE_PARALLEL_LINE:
+        this._snackBar.open('Select line and create/select point', 'OK!', { duration: duration });
+        break;
+      case ActionEnum.CREATE_MID_PERPENDICULAR:
+        this._snackBar.open('', 'OK!', { duration: duration });
+        break;
+      case ActionEnum.CREATE_BISECTOR:
+        this._snackBar.open('', 'OK!', { duration: duration });
+        break;
+      case ActionEnum.SET_SEGMENT_LENGHT:
+        this._snackBar.open('', 'OK!', { duration: duration });
+        break;
+      case ActionEnum.SET_ANGLE_MEASURE:
+        this._snackBar.open('', 'OK!', { duration: duration });
+        break;
+      case ActionEnum.ENTER_EQUATION:
+        this._snackBar.open('', 'OK!', { duration: duration });
+        break;
+      default:
+        // do not display anything
+        break;
+    }
   }
 }
