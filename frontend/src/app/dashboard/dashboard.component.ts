@@ -12,7 +12,6 @@ import { MatSnackBar, MatSnackBarConfig } from '@angular/material/snack-bar';
 })
 export class DashboardComponent {
   ActionEnum = ActionEnum;
-  Board = Board
 
   actionButtons: { name: string, tooltip: string, imagePath: string, actionToDo: ActionEnum }[] = [
     {name: 'point', tooltip: 'Create Point', imagePath: '../../assets/button-images/PointIcon.svg', actionToDo: ActionEnum.CREATE_POINT},
@@ -52,6 +51,8 @@ export class DashboardComponent {
     {name: 'clear', imagePath: '../../assets/button-images/Icon.svg', onClick: () => { }}*/
   ];
 
+  board: Board | undefined;
+
   constructor(
     private _matIconRegistry: MatIconRegistry,
     private _domSanitizer: DomSanitizer,
@@ -64,14 +65,18 @@ export class DashboardComponent {
 
   ngOnInit() {
     new Promise(resolve => setTimeout(resolve, 100)).then(() => {
-      Board.initialize('jxgbox', [-100, 100, 100, -100], false);
+      this.board = new Board('jxgbox', [-100, 100, 100, -100], false);
     });
   }
 
   openSnackBar() {
     const duration = 3000;
 
-    switch(Board.getAction()) {
+    if(this.board === undefined) {
+      return;
+    }
+
+    switch(this.board.getAction()) {
       case ActionEnum.CREATE_POINT:
         this._snackBar.open('Click on board or on shape', 'OK!', { duration: duration });
         break;
