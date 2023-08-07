@@ -1,7 +1,7 @@
 import { ActionEnum } from "./ActionEnum";
 import { BoardScheme } from "./BoardScheme";
 import { Colors, Naming, Sizes } from "./Config";
-import { distance, isLine, isPoint } from "./Utils";
+import { distance, isCircle, isIntersectionPoint, isLine, isPoint } from "./Utils";
 
 declare const JXG: any 
 
@@ -14,7 +14,7 @@ export class Board {
     private capitalLettersCounter = 0;
     private lowercaseLettersCounter = 0;
 
-    //private boardScheme: BoardScheme;
+    private boardScheme: BoardScheme;
 
     constructor(boardId: string, bounds: [number, number, number, number], showAxis: boolean) {
         this.board = JXG.JSXGraph.initBoard(boardId, {boundingbox: bounds, axis: showAxis, keepAspectRatio: true});
@@ -27,6 +27,8 @@ export class Board {
 
         this.capitalLettersCounter = 0;
         this.lowercaseLettersCounter = 0;
+
+        this.boardScheme = new BoardScheme();
     }
 
     setAction(action: ActionEnum): void {
@@ -88,6 +90,7 @@ export class Board {
 
         point.on('down', (event: any) => { this.handlePointClick(event, point); });
         this.board.update();
+        this.boardScheme.addPoint(point);
 
         return point;
     }
@@ -105,6 +108,8 @@ export class Board {
 
         point.on('down', (event: any) => { this.handlePointClick(event, point); });
         this.board.update();
+        this.boardScheme.addGlider(point);
+        this.boardScheme.addPointToShape(shape, point);
 
         return point;
     }
@@ -119,8 +124,8 @@ export class Board {
         });
 
         segment.on('down', (event: any) => { this.handleLineClick(event, segment); });
-
         this.createIntersectionPoints(segment);
+        this.boardScheme.addSegment(segment);
         
         return segment;
     }
@@ -134,8 +139,8 @@ export class Board {
         });
 
         ray.on('down', (event: any) => { this.handleLineClick(event, ray); });
-
         this.createIntersectionPoints(ray);
+        this.boardScheme.addRay(ray);
 
         return ray;
     }
@@ -148,8 +153,8 @@ export class Board {
         });
 
         line.on('down', (event: any) => { this.handleLineClick(event, line); });
-
         this.createIntersectionPoints(line);
+        this.boardScheme.addLine(line);
 
         return line;
     }
@@ -163,30 +168,48 @@ export class Board {
         });
 
         circle.on('down', (event: any) => { this.handleCircleClick(event, circle); });
-
         this.createIntersectionPoints(circle);
+        this.boardScheme.addCircle(circle);
 
         return circle;
     }
 
-    private createIntersectionPoints(shape: any): void {
-        for(let idx in this.board.objects) {
-            var el = this.board.objects[idx];
+    private createIntersectionPoint(x: number, y: number, shape1: any, shape2: any, i1: number, i2: number): any {
+        const point = this.board.create('point', [x, y], { 
+            name: this.getNextCapitalLetter(), 
+            label: {fixed:false},
+            size: Sizes.POINT_SIZE,
+            color: Colors.PRIMARY,
+            highlightFillColor: Colors.SECONDARY,
+            highlightStrokeColor: Colors.SECONDARY,
+            showInfobox: false
+        });
 
-            if(el.id == shape.id) {
+        point.on('down', (event: any) => { this.handlePointClick(event, point); });
+        point.makeIntersection(shape1, shape2, i1, i2);
+        this.boardScheme.addIntersection(point);
+        this.boardScheme.addPointToShape(shape1, point);
+        this.boardScheme.addPointToShape(shape2, point);
+        
+        return point;
+    }
+
+    private createIntersectionPoints(shape: any): void {
+        for(let el in this.board.objects) {
+            var obj = this.board.objects[el];
+
+            if(obj.id == shape.id) {
                 continue;
             }
 
-            if(el.elType == 'line' || el.elType == 'circle') {
-                const point1 = JXG.Math.Geometry.meet(shape.stdform, el.stdform, 0, this.board);
-                const point2 = JXG.Math.Geometry.meet(shape.stdform, el.stdform, 1, this.board);
+            if(isLine(obj) || isCircle(obj)) {
+                const point1 = JXG.Math.Geometry.meet(shape.stdform, obj.stdform, 0, this.board);
+                const point2 = JXG.Math.Geometry.meet(shape.stdform, obj.stdform, 1, this.board);
+                
+                const intersectionPoint1 = this.createIntersectionPoint(point1.usrCoords[1], point1.usrCoords[2], shape, obj, 0, 0);
 
-                const intersection1 = this.createPoint(point1.usrCoords[1], point1.usrCoords[2]);
-                intersection1.makeIntersection(shape, el, 0, 0);
-
-                if(el.elType == 'circle' || shape.elType == 'circle') {
-                    const intersection2 =  this.createPoint(point2.usrCoords[1], point2.usrCoords[2]);  
-                    intersection2.makeIntersection(shape, el, 1, 1); 
+                if(isCircle(obj) || isCircle(shape)) {
+                    const intersectionPoint2 =  this.createIntersectionPoint(point2.usrCoords[1], point2.usrCoords[2], shape, obj, 1, 1);  
                 }               
             }
         }
@@ -245,9 +268,13 @@ export class Board {
             case ActionEnum.CREATE_LINE:
             case ActionEnum.CREATE_RAY:
             case ActionEnum.CREATE_CIRCLE:
-                console.log('board click');
                 if(canBeCreated) { this.shapesAccumulator.push(this.createPoint(x, y)); }
                 else { this.shapesAccumulator.push(duplicationPoint); }
+                break;
+            case ActionEnum.CREATE_PERPENDICULAR_LINE:
+            case ActionEnum.CREATE_PARALLEL_LINE:
+                if(this.shapesAccumulator.length == 1 && canBeCreated) { this.shapesAccumulator.push(this.createPoint(x, y)) }
+                else if(this.shapesAccumulator.length == 1) { this.shapesAccumulator.push(duplicationPoint); }
                 break;
             default:
                 return;
@@ -277,8 +304,11 @@ export class Board {
             case ActionEnum.CREATE_LINE:
             case ActionEnum.CREATE_RAY:
             case ActionEnum.CREATE_CIRCLE:
-                console.log('point click');
                 this.shapesAccumulator.push(point);
+                break;
+            case ActionEnum.CREATE_PERPENDICULAR_LINE:
+            case ActionEnum.CREATE_PARALLEL_LINE:
+                if(this.shapesAccumulator.length == 1) { this.shapesAccumulator.push(point) }
                 break;
             default:
                 return;
@@ -309,17 +339,20 @@ export class Board {
 
         switch(this.action) {
             case ActionEnum.CREATE_POINT:
-                if(canBeCreated) {
-                    this.createGliderPoint(x, y, line);
-                }
+                if(canBeCreated) { this.createGliderPoint(x, y, line); }
                 break;
             case ActionEnum.CREATE_SEGMENT:
             case ActionEnum.CREATE_LINE:
             case ActionEnum.CREATE_RAY:
             case ActionEnum.CREATE_CIRCLE:
-                console.log('line click');
                 if(canBeCreated) { this.shapesAccumulator.push(this.createGliderPoint(x, y, line)); }
                 else { this.shapesAccumulator.push(duplicationPoint); }
+                break;
+            case ActionEnum.CREATE_PERPENDICULAR_LINE:
+            case ActionEnum.CREATE_PARALLEL_LINE:
+                if(this.shapesAccumulator.length == 0) { this.shapesAccumulator.push(line); }
+                else if(this.shapesAccumulator.length == 1 && canBeCreated) { this.shapesAccumulator.push(this.createGliderPoint(x, y, line)) }
+                else if(this.shapesAccumulator.length == 1) { this.shapesAccumulator.push(duplicationPoint); }
                 break;
             default:
                 return;
@@ -361,9 +394,13 @@ export class Board {
             case ActionEnum.CREATE_LINE:
             case ActionEnum.CREATE_RAY:
             case ActionEnum.CREATE_CIRCLE:
-                console.log('circle click');
                 if(canBeCreated) { this.shapesAccumulator.push(this.createGliderPoint(x, y, circle)); }
                 else { this.shapesAccumulator.push(duplicationPoint); }
+                break;
+            case ActionEnum.CREATE_PERPENDICULAR_LINE:
+            case ActionEnum.CREATE_PARALLEL_LINE:
+                if(this.shapesAccumulator.length == 1 && canBeCreated) { this.shapesAccumulator.push(this.createGliderPoint(x, y, circle)) }
+                else if(this.shapesAccumulator.length == 1) { this.shapesAccumulator.push(duplicationPoint); }
                 break;
             default:
                 return;
@@ -390,6 +427,12 @@ export class Board {
                     break;
                 case ActionEnum.CREATE_CIRCLE:
                     this.createCircle(this.shapesAccumulator[0], this.shapesAccumulator[1]);
+                    break;
+                case ActionEnum.CREATE_PERPENDICULAR_LINE:
+                    this.createPerpendicularLine(this.shapesAccumulator[0], this.shapesAccumulator[1]);
+                    break;
+                case ActionEnum.CREATE_PARALLEL_LINE:
+                    this.createParallelLine(this.shapesAccumulator[0], this.shapesAccumulator[1]);
                     break;
                 default:
                     return;
@@ -429,14 +472,14 @@ export class Board {
         var nonIntersectionPoints: any[] = [];
 
         for(let el in this.board.objects) {
-            const point = this.board.objects[el];
+            const obj = this.board.objects[el];
 
-            if((point.elType == 'point' || point.elType == 'glider') && point.getAttribute('visible')) {
-                nonIntersectionPoints.push(point);
+            if(isPoint(obj) && obj.getAttribute('visible')) {
+                nonIntersectionPoints.push(obj);
             }
 
-            if(point.elType == 'intersection') {
-                intersectionPoints.push(point);
+            if(isIntersectionPoint(obj)) {
+                intersectionPoints.push(obj);
             }
         }
 
