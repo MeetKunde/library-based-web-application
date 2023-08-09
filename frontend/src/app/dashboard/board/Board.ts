@@ -1,5 +1,6 @@
 import { ActionEnum } from "./ActionEnum";
 import { BoardScheme } from "./BoardScheme";
+import { BoardSchemeJson } from "./BoardSchemeJson";
 import { Colors, Naming, Sizes } from "./Config";
 import { distance, isCircle, isIntersectionPoint, isLine, isPoint } from "./Utils";
 
@@ -16,8 +17,8 @@ export class Board {
 
     private boardScheme: BoardScheme;
 
-    constructor(boardId: string, bounds: [number, number, number, number], showAxis: boolean) {
-        this.board = JXG.JSXGraph.initBoard(boardId, {boundingbox: bounds, axis: showAxis, keepAspectRatio: true});
+    constructor(boardId: string, bounds: [number, number, number, number], showAxis: boolean, keepAspectRatio: boolean) {
+        this.board = JXG.JSXGraph.initBoard(boardId, { boundingbox: bounds, axis: showAxis, keepAspectRatio: keepAspectRatio });
         this.board.on('down', this.handleBoardClick);
         this.board.on('update', this.handleBoardUpdate);
 
@@ -49,6 +50,15 @@ export class Board {
             this.setAction(action);
             return true;
         }
+    }
+
+    getScheme(): BoardSchemeJson {  
+        console.log(this.board.objects);
+        return this.boardScheme.get();
+    }
+
+    detach() {
+        JXG.JSXGraph.freeBoard(this.board);
     }
 
     private getNextCapitalLetter(): string {
@@ -108,8 +118,7 @@ export class Board {
 
         point.on('down', (event: any) => { this.handlePointClick(event, point); });
         this.board.update();
-        this.boardScheme.addGlider(point);
-        this.boardScheme.addPointToShape(shape, point);
+        this.boardScheme.addGlider(point, shape);
 
         return point;
     }
@@ -124,8 +133,8 @@ export class Board {
         });
 
         segment.on('down', (event: any) => { this.handleLineClick(event, segment); });
-        this.createIntersectionPoints(segment);
         this.boardScheme.addSegment(segment);
+        this.createIntersectionPoints(segment);
         
         return segment;
     }
@@ -139,8 +148,8 @@ export class Board {
         });
 
         ray.on('down', (event: any) => { this.handleLineClick(event, ray); });
-        this.createIntersectionPoints(ray);
         this.boardScheme.addRay(ray);
+        this.createIntersectionPoints(ray);
 
         return ray;
     }
@@ -153,8 +162,8 @@ export class Board {
         });
 
         line.on('down', (event: any) => { this.handleLineClick(event, line); });
-        this.createIntersectionPoints(line);
         this.boardScheme.addLine(line);
+        this.createIntersectionPoints(line);
 
         return line;
     }
@@ -168,8 +177,8 @@ export class Board {
         });
 
         circle.on('down', (event: any) => { this.handleCircleClick(event, circle); });
-        this.createIntersectionPoints(circle);
         this.boardScheme.addCircle(circle);
+        this.createIntersectionPoints(circle);
 
         return circle;
     }
@@ -177,26 +186,28 @@ export class Board {
     private createIntersectionPoint(x: number, y: number, shape1: any, shape2: any, i1: number, i2: number): any {
         const point = this.board.create('point', [x, y], { 
             name: this.getNextCapitalLetter(), 
-            label: {fixed:false},
+            label: {fixed:false, opacity: 0, highlightStrokeOpacity: 0},
             size: Sizes.POINT_SIZE,
             color: Colors.PRIMARY,
             highlightFillColor: Colors.SECONDARY,
             highlightStrokeColor: Colors.SECONDARY,
-            showInfobox: false
+            showInfobox: false,
+            opacity: 0,
+            highlightStrokeOpacity: 0
         });
 
         point.on('down', (event: any) => { this.handlePointClick(event, point); });
+        //console.log(JXG.Math.Geometry.meetLineLine(shape1.stdform, shape2.stdform, 0, this.board));
+        //console.log(JXG.Math.Geometry.meetLineLine(shape1.stdform, shape2.stdform, 1, this.board));
         point.makeIntersection(shape1, shape2, i1, i2);
-        this.boardScheme.addIntersection(point);
-        this.boardScheme.addPointToShape(shape1, point);
-        this.boardScheme.addPointToShape(shape2, point);
+        this.boardScheme.addIntersection(point, shape1, shape2);
         
         return point;
     }
 
     private createIntersectionPoints(shape: any): void {
-        for(let el in this.board.objects) {
-            var obj = this.board.objects[el];
+        for(let objKey in this.board.objects) {
+            var obj = this.board.objects[objKey];
 
             if(obj.id == shape.id) {
                 continue;
@@ -225,7 +236,7 @@ export class Board {
         });
 
         line.on('down', (event: any) => { this.handleLineClick(event, line); });
-
+        this.boardScheme.addPerpendicularity(line, baseLine, basePoint);
         this.createIntersectionPoints(line);
 
         return line;
@@ -239,7 +250,7 @@ export class Board {
         });
 
         line.on('down', (event: any) => { this.handleLineClick(event, line); });
-
+        this.boardScheme.addParallelism(line, baseLine, basePoint);
         this.createIntersectionPoints(line);
 
         return line;
@@ -456,10 +467,10 @@ export class Board {
 
         var canBeCreated = true;
         var duplication = undefined;
-        for(let el in this.board.objects) {
-            if(JXG.isPoint(this.board.objects[el]) && this.board.objects[el].hasPoint(coords.usrCoords[1], coords.usrCoords[2])) {
+        for(let objKey in this.board.objects) {
+            if(JXG.isPoint(this.board.objects[objKey]) && this.board.objects[objKey].hasPoint(coords.usrCoords[1], coords.usrCoords[2])) {
                 canBeCreated = false;
-                duplication = this.board.objects[el];
+                duplication = this.board.objects[objKey];
                 break;
             }
         }
@@ -471,10 +482,10 @@ export class Board {
         var intersectionPoints: any[] = [];
         var nonIntersectionPoints: any[] = [];
 
-        for(let el in this.board.objects) {
-            const obj = this.board.objects[el];
+        for(let objKey in this.board.objects) {
+            const obj = this.board.objects[objKey];
 
-            if(isPoint(obj) && obj.getAttribute('visible')) {
+            if(isPoint(obj) && obj.isReal) {
                 nonIntersectionPoints.push(obj);
             }
 
@@ -484,13 +495,18 @@ export class Board {
         }
 
         for(const ip of intersectionPoints) {
+            if(Number.isNaN(ip.coords.usrCoords[1]) || Number.isNaN(ip.coords.usrCoords[2])) {
+                this.boardScheme.setIntersectionState(ip, false, []); 
+                continue; 
+            }
+
             var newOpacity = 1;
+            var inactiveReasons: any[] = [];
             for(const nip of nonIntersectionPoints) {
                 const dist = distance(ip, nip);
-                
-                if(dist < 1 || Number.isNaN(dist)) {
+                if(dist < 1) {
                     newOpacity = 0;
-                    break;
+                    inactiveReasons.push(nip);
                 }
             }
 
@@ -498,6 +514,8 @@ export class Board {
             ip.setAttribute({ highlightStrokeOpacity: newOpacity });
             ip.label.setAttribute({ opacity: newOpacity });
             ip.label.setAttribute({ highlightStrokeOpacity: newOpacity });
+
+            this.boardScheme.setIntersectionState(ip, newOpacity === 1, inactiveReasons);
         }
     }
 };

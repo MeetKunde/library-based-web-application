@@ -1,7 +1,7 @@
 <mat-sidenav-container>
     <mat-sidenav mode="side" opened>
         <div class="grid-container">
-            <button mat-icon-button [class.creator-icon-button]="board?.getAction() != button.actionToDo" [class.creator-icon-button-selected]="board?.getAction() == button.actionToDo" *ngFor="let button of actionButtons" matTooltip="{{button.tooltip}}" (click)="board?.changeAction(button.actionToDo); openSnackBar();">
+            <button mat-icon-button [class.creator-icon-button]="!button.highlightButton()" [class.creator-icon-button-selected]="button.highlightButton()" *ngFor="let button of actionButtons" matTooltip="{{button.tooltip}}" (click)="button.actionToDo();">
                 <mat-icon svgIcon="{{button.name}}"></mat-icon>
             </button>
         </div>
