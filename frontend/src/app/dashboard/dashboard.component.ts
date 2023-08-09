@@ -52,6 +52,7 @@ export class DashboardComponent {
   ];
 
   board: Board | undefined;
+  tabLabel: string;
 
   private boardId = 'jxgbox';
   private minX = -100;
@@ -65,6 +66,7 @@ export class DashboardComponent {
     private _matIconRegistry: MatIconRegistry,
     private _domSanitizer: DomSanitizer,
     private _snackBar: MatSnackBar) { 
+      this.tabLabel = 'exercise';
       this.actionButtons.forEach(button => this._matIconRegistry.addSvgIcon(
         button.name,
         this._domSanitizer.bypassSecurityTrustResourceUrl(button.imagePath)
@@ -75,6 +77,10 @@ export class DashboardComponent {
     new Promise(resolve => setTimeout(resolve, 100)).then(() => {
       this.board = new Board(this.boardId, [this.minX, this.maxX, this.minY, this.maxY], this.showAxis, this.keepAspectRatio);
     });
+  }
+
+  setTab(label: string) {
+    this.tabLabel = label;
   }
 
   saveScheme() {

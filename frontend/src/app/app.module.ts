@@ -12,6 +12,8 @@ import { MatIconModule } from '@angular/material/icon';
 import { HttpClientModule } from '@angular/common/http';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatSnackBarModule } from '@angular/material/snack-bar';
+import { MatTabsModule } from '@angular/material/tabs';
+import { MatCardModule } from '@angular/material/card'
 
 
 @NgModule({
@@ -29,7 +31,9 @@ import { MatSnackBarModule } from '@angular/material/snack-bar';
     MatIconModule,
     HttpClientModule,
     MatTooltipModule,
-    MatSnackBarModule
+    MatSnackBarModule,
+    MatTabsModule,
+    MatCardModule
   ],
   providers: [],
   bootstrap: [AppComponent]
