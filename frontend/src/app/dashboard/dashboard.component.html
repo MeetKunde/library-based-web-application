@@ -17,13 +17,19 @@
         </mat-card>
 
         <mat-card [hidden]="tabLabel != 'settings'" class="main-content">
-            Settings
+            <form class="example-form" [formGroup]="formGroup" (ngSubmit)="alertFormValues(formGroup)" ngNativeValidate>
+
+                <mat-slide-toggle formControlName="showAxis">Show Axes</mat-slide-toggle>
+                <mat-slide-toggle formControlName="keepRatio">Keep Aspect Ratio</mat-slide-toggle>
+                            
+                <button mat-raised-button type="submit">Save Settings</button>
+              </form>
         </mat-card>
 
         <div class="tab-labels">
-            <button mat-flat-button class="vertical-tab-button" (click)="setTab('exercise');">Excercise</button>
-            <button mat-flat-button class="vertical-tab-button" (click)="setTab('solution');">Solution</button>
-            <button mat-flat-button class="vertical-tab-button" (click)="setTab('settings');">Settings</button>
+            <button mat-flat-button [class.vertical-tab-button]="tabLabel != 'exercise'" [class.vertical-tab-button-selected]="tabLabel == 'exercise'" (click)="setTab('exercise');">Excercise</button>
+            <button mat-flat-button [class.vertical-tab-button]="tabLabel != 'solution'" [class.vertical-tab-button-selected]="tabLabel == 'solution'" class="vertical-tab-button" (click)="setTab('solution');">Solution</button>
+            <button mat-flat-button [class.vertical-tab-button]="tabLabel != 'settings'" [class.vertical-tab-button-selected]="tabLabel == 'settings'" class="vertical-tab-button" (click)="setTab('settings');">Settings</button>
         </div>
     </mat-sidenav-content>
 </mat-sidenav-container>

@@ -18,7 +18,7 @@ export class Board {
     private boardScheme: BoardScheme;
 
     constructor(boardId: string, bounds: [number, number, number, number], showAxis: boolean, keepAspectRatio: boolean) {
-        this.board = JXG.JSXGraph.initBoard(boardId, { boundingbox: bounds, axis: showAxis, keepAspectRatio: keepAspectRatio });
+        this.board = JXG.JSXGraph.initBoard(boardId, { boundingbox: bounds, showcopyright: false, axis: showAxis, keepAspectRatio: keepAspectRatio });
         this.board.on('down', this.handleBoardClick);
         this.board.on('update', this.handleBoardUpdate);
 

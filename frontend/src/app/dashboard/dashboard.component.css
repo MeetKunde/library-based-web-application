@@ -56,10 +56,30 @@ mat-sidenav-container {
 }
 
 .vertical-tab-button:hover {
+    height: calc(3vw);
+    width: calc(20vh);
+    margin: 0px;
+    padding: 0px;
+    transform:rotate(90deg);
+    -ms-transform:rotate(90deg); /* IE 9 */
+    -moz-transform:rotate(90deg); /* Firefox */
+    -webkit-transform:rotate(90deg); /* Safari and Chrome */
+    -o-transform:rotate(90deg); /* Opera */
+    background-color: #2C3C5B!important;
     color: #0AC5A8!important;
 }
 
 .vertical-tab-button-selected {
+    height: calc(3vw);
+    width: calc(20vh);
+    margin: 0px;
+    padding: 0px;
+    transform:rotate(90deg);
+    -ms-transform:rotate(90deg); /* IE 9 */
+    -moz-transform:rotate(90deg); /* Firefox */
+    -webkit-transform:rotate(90deg); /* Safari and Chrome */
+    -o-transform:rotate(90deg); /* Opera */
+    background-color: #2C3C5B!important;
     color: #0AC5A8!important;
 }
 
@@ -77,6 +97,11 @@ mat-sidenav-container {
 
 [hidden] {
     display: none !important;
+}
+
+.example-form mat-slide-toggle {
+    margin: 8px 0;
+    display: block;
 }
 
 .creator-icon-button {

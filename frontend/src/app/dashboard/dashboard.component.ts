@@ -3,7 +3,9 @@ import { MatIconRegistry } from '@angular/material/icon';
 import { DomSanitizer } from '@angular/platform-browser';
 import { Board } from './board/Board'
 import { ActionEnum } from './board/ActionEnum';
-import { MatSnackBar, MatSnackBarConfig } from '@angular/material/snack-bar';
+import { MatSnackBar } from '@angular/material/snack-bar';
+import { FormBuilder, FormGroup } from '@angular/forms';
+
 
 @Component({
   selector: 'app-dashboard',
@@ -53,6 +55,11 @@ export class DashboardComponent {
 
   board: Board | undefined;
   tabLabel: string;
+  isChecked = true;
+  formGroup = this._formBuilder.group({
+    showAxis: '',
+    keepRatio: '',
+  });
 
   private boardId = 'jxgbox';
   private minX = -100;
@@ -65,7 +72,8 @@ export class DashboardComponent {
   constructor(
     private _matIconRegistry: MatIconRegistry,
     private _domSanitizer: DomSanitizer,
-    private _snackBar: MatSnackBar) { 
+    private _snackBar: MatSnackBar,
+    private _formBuilder: FormBuilder) { 
       this.tabLabel = 'exercise';
       this.actionButtons.forEach(button => this._matIconRegistry.addSvgIcon(
         button.name,
@@ -81,6 +89,10 @@ export class DashboardComponent {
 
   setTab(label: string) {
     this.tabLabel = label;
+  }
+
+  alertFormValues(formGroup: FormGroup) {
+    alert(JSON.stringify(formGroup.value, null, 2));
   }
 
   saveScheme() {
