@@ -8,6 +8,7 @@ import { AppRoutingModule } from './app-routing.module';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatSidenavModule } from '@angular/material/sidenav'
 import { MatButtonModule } from '@angular/material/button'
+import { MatCheckboxModule } from '@angular/material/checkbox'
 import { MatIconModule } from '@angular/material/icon';
 import { HttpClientModule } from '@angular/common/http';
 import { MatTooltipModule } from '@angular/material/tooltip';
@@ -17,28 +18,54 @@ import { MatCardModule } from '@angular/material/card'
 import { FormsModule } from '@angular/forms';
 import { ReactiveFormsModule } from '@angular/forms'
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
+import { MatDialogModule } from '@angular/material/dialog';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
+
+import { InstructionSnackBarComponent } from './dashboard/snackbars/instructionSnackBar.component';
+import { InfoSnackBarComponent } from './dashboard/snackbars/infoSnackBar.component';
+import { DivideSegmentDialogComponent } from './dashboard/dialogs/divideSegmentDialog.component';
+import { DivideAngleDialogComponent } from './dashboard/dialogs/divideAngleDialog.component';
+import { EnterFormulaDialogComponent } from './dashboard/dialogs/enterFormula.component';
+import { SetSegmentLengthDialogComponent } from './dashboard/dialogs/setSegmentLength.component';
+import { SetAngleMeasureDialogComponent } from './dashboard/dialogs/setAngleMeasure.component';
+import { AngleIsConvexDialogComponent } from './dashboard/dialogs/angleIsConvexDialog.component';
+
+
 
 @NgModule({
   declarations: [
     AppComponent,
-    DashboardComponent
+    DashboardComponent,
+    InstructionSnackBarComponent,
+    InfoSnackBarComponent,
+    DivideSegmentDialogComponent,
+    DivideAngleDialogComponent,
+    EnterFormulaDialogComponent,
+    SetSegmentLengthDialogComponent,
+    SetAngleMeasureDialogComponent,
+    AngleIsConvexDialogComponent,
   ],
   imports: [
     BrowserModule,
     BrowserAnimationsModule,
     AppRoutingModule,
+    HttpClientModule,
     MatToolbarModule,
     MatSidenavModule,
     MatButtonModule,
+    MatCheckboxModule,
     MatIconModule,
-    HttpClientModule,
     MatTooltipModule,
     MatSnackBarModule,
     MatTabsModule,
     MatCardModule,
     FormsModule,
     ReactiveFormsModule,
-    MatSlideToggleModule
+    MatSlideToggleModule,
+    MatFormFieldModule,
+    MatInputModule,
+    MatDialogModule,
   ],
   providers: [],
   bootstrap: [AppComponent]

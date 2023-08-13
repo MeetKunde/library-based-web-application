@@ -2,7 +2,8 @@ import { ActionEnum } from "./ActionEnum";
 import { BoardScheme } from "./BoardScheme";
 import { BoardSchemeJson } from "./BoardSchemeJson";
 import { Colors, Naming, Sizes } from "./Config";
-import { distance, isCircle, isIntersectionPoint, isLine, isPoint } from "./Utils";
+import { AnswearType, RequestEnum } from "./RequestEnum";
+import { distance, isCircle, isIntersectionPoint, isLine, isPoint, xCoord, yCoord } from "./Utils";
 
 declare const JXG: any 
 
@@ -17,7 +18,7 @@ export class Board {
 
     private boardScheme: BoardScheme;
 
-    constructor(boardId: string, bounds: [number, number, number, number], showAxis: boolean, keepAspectRatio: boolean) {
+    constructor(private boardId: string, private bounds: [number, number, number, number], private showAxis: boolean, private keepAspectRatio: boolean, private requestDataFromUser: (requestType: RequestEnum, callback: (data: AnswearType) => void) => void) {
         this.board = JXG.JSXGraph.initBoard(boardId, { boundingbox: bounds, showcopyright: false, axis: showAxis, keepAspectRatio: keepAspectRatio });
         this.board.on('down', this.handleBoardClick);
         this.board.on('update', this.handleBoardUpdate);
@@ -33,8 +34,14 @@ export class Board {
     }
 
     setAction(action: ActionEnum): void {
-        this.action = action;   
-        this.shapesAccumulator = [];
+        if(action == ActionEnum.ENTER_FORMULA) { 
+            this.action = ActionEnum.NONE;
+            this.addFormula(); 
+        }
+        else {
+            this.action = action;   
+            this.shapesAccumulator = [];
+        }
     }
 
     getAction(): ActionEnum {
@@ -197,8 +204,6 @@ export class Board {
         });
 
         point.on('down', (event: any) => { this.handlePointClick(event, point); });
-        //console.log(JXG.Math.Geometry.meetLineLine(shape1.stdform, shape2.stdform, 0, this.board));
-        //console.log(JXG.Math.Geometry.meetLineLine(shape1.stdform, shape2.stdform, 1, this.board));
         point.makeIntersection(shape1, shape2, i1, i2);
         this.boardScheme.addIntersection(point, shape1, shape2);
         
@@ -256,6 +261,104 @@ export class Board {
         return line;
     }
 
+    private divideSegment(segmentEnds: [any, any], partsNumber: number): any[] {
+        var line: any;
+        const lineSearch: [boolean, string] = this.boardScheme.getLineByPoints(segmentEnds[0].id, segmentEnds[1].id);
+        if(lineSearch[0]) { line = this.board.objects[lineSearch[1]]; }
+        else { line = this.createSegment(segmentEnds[0], segmentEnds[1]); }
+
+        const dx = (xCoord(segmentEnds[1]) - xCoord(segmentEnds[0])) / partsNumber;
+        const dy = (yCoord(segmentEnds[1]) - yCoord(segmentEnds[0])) / partsNumber;
+
+        var points: any[] = [];
+        points.push(segmentEnds[0]);
+        for(var i = 1; i < partsNumber; i++) {
+            var x = xCoord(segmentEnds[0]) + i * dx;
+            var y = yCoord(segmentEnds[0]) + i * dy;
+            const point = this.createGliderPoint(x, y, line);
+            point.setAttribute({fixed: true});
+            points.push(point);
+        }
+        points.push(segmentEnds[1]);
+
+        return points;
+    }
+
+    private divideSegmentRequestData(segmentEnds: [any, any]): void {
+        this.requestDataFromUser(RequestEnum.PARTS_NUMBER_TO_DIVIDE_SEGMENT, (data) => {
+            const castedData = data as { partsNumber: number };
+            this.divideSegment(segmentEnds, castedData.partsNumber);
+        });
+    }
+
+    private divideAngle(anglePoints: [any, any, any], partsNumber: number, angleIsConvex: boolean, radius: number = 1): any[] {
+        var parts: any[] = [];
+
+        //const dx = Math.cos(angle.Value() * i / n) * angle.radius;
+        //const dy = Math.cos(angle.Value() * i / n) * angle.radius;
+        
+        return parts;
+    }
+
+    private divideAngleRequestData(anglePoints: [any, any, any]): void {
+        this.requestDataFromUser(RequestEnum.PARTS_NUMBER_AND_IS_CONVEX_TO_DIVIDE_ANGLE, (data) => {
+            const castedData = data as { partsNumber: number, angleIsConvex: boolean };
+            this.divideAngle(anglePoints, castedData.partsNumber, castedData.angleIsConvex);
+        });
+    }
+
+    private createMidPerpendicular(baseSegmentEnds: [any, any]): any {
+        const points = this.divideSegment(baseSegmentEnds, 2);
+        const segmentSearch = this.boardScheme.getLineByPoints(baseSegmentEnds[0].id, baseSegmentEnds[1].id);
+        const segment = this.board.objects[segmentSearch[1]];
+        const line = this.createPerpendicularLine(segment, points[1]);
+
+        this.boardScheme.addMidPerpendicular(baseSegmentEnds[0], baseSegmentEnds[1], line);
+        return line;
+    }
+
+    private createBisector(baseAnglePoints: [any, any, any], baseAngleIsConvex: boolean): any {
+        
+    }
+
+    private createBisectorRequestData(baseAnglePoints: [any, any, any]): any {
+        this.requestDataFromUser(RequestEnum.ANGLE_IS_CONVEX, (data) => {
+            const castedData = data as { angleIsConvex: boolean };
+            this.createBisector(baseAnglePoints, castedData.angleIsConvex);
+        });
+    }
+
+    private setSegmentsEquality(segment1Ends: [any, any], segment2Ends: [any, any]): void {
+
+        this.boardScheme.addEqualSegments(segment1Ends[0], segment1Ends[1], segment2Ends[0], segment2Ends[1]);
+    }
+
+    private setAnglesEquality(angle1Points: [any, any, any], angle2Points: [any, any, any]): void {
+        
+        this.boardScheme.addEqualAngles(angle1Points[0], angle1Points[1], angle1Points[2], angle2Points[0], angle2Points[1], angle2Points[2]);
+    }
+
+    private setSegmentLength(segmentEnds: [any, any]): void {
+        this.requestDataFromUser(RequestEnum.LENGTH, (data) => {
+            const castedData = data as { length: string };
+            this.boardScheme.setSegmentLength(segmentEnds[0], segmentEnds[1], castedData.length);
+        });
+    }
+
+    private setAngleMeasure(anglePoints: [any, any, any]): void {
+        this.requestDataFromUser(RequestEnum.MEASURE, (data) => {
+            const castedData = data as { measure: string, angleIsConvex: boolean };
+            this.boardScheme.setAngleMeasure(anglePoints[0], anglePoints[1], anglePoints[2], castedData.angleIsConvex, castedData.measure);
+        });
+    }
+
+    private addFormula(): void {
+        this.requestDataFromUser(RequestEnum.FORMULA, (data) => {
+            const castedData = data as { formula: string };
+            this.boardScheme.addFormula(castedData.formula);
+        });
+    }
+
     private handleBoardClick = (event: any): void => {        
         if(this.shapeClicked) {
             this.shapeClicked = false;
@@ -286,6 +389,17 @@ export class Board {
             case ActionEnum.CREATE_PARALLEL_LINE:
                 if(this.shapesAccumulator.length == 1 && canBeCreated) { this.shapesAccumulator.push(this.createPoint(x, y)) }
                 else if(this.shapesAccumulator.length == 1) { this.shapesAccumulator.push(duplicationPoint); }
+                break;
+            case ActionEnum.CREATE_MID_PERPENDICULAR:
+            case ActionEnum.CREATE_BISECTOR:
+            case ActionEnum.SET_SEGMENT_LENGHT:
+            case ActionEnum.SET_ANGLE_MEASURE:
+            case ActionEnum.DIVIDE_SEGMENT:
+            case ActionEnum.DIVIDE_ANGLE:
+            case ActionEnum.SET_EQUAL_SEGMENTS:
+            case ActionEnum.SET_EQUAL_ANGLES:
+                if(canBeCreated) { this.shapesAccumulator.push(this.createPoint(x, y)); }
+                else { this.shapesAccumulator.push(duplicationPoint); }
                 break;
             default:
                 return;
@@ -320,6 +434,16 @@ export class Board {
             case ActionEnum.CREATE_PERPENDICULAR_LINE:
             case ActionEnum.CREATE_PARALLEL_LINE:
                 if(this.shapesAccumulator.length == 1) { this.shapesAccumulator.push(point) }
+                break;
+            case ActionEnum.CREATE_MID_PERPENDICULAR:
+            case ActionEnum.CREATE_BISECTOR:
+            case ActionEnum.SET_SEGMENT_LENGHT:
+            case ActionEnum.SET_ANGLE_MEASURE:
+            case ActionEnum.DIVIDE_SEGMENT:
+            case ActionEnum.DIVIDE_ANGLE:
+            case ActionEnum.SET_EQUAL_SEGMENTS:
+            case ActionEnum.SET_EQUAL_ANGLES:
+                this.shapesAccumulator.push(point);
                 break;
             default:
                 return;
@@ -364,6 +488,17 @@ export class Board {
                 if(this.shapesAccumulator.length == 0) { this.shapesAccumulator.push(line); }
                 else if(this.shapesAccumulator.length == 1 && canBeCreated) { this.shapesAccumulator.push(this.createGliderPoint(x, y, line)) }
                 else if(this.shapesAccumulator.length == 1) { this.shapesAccumulator.push(duplicationPoint); }
+                break;
+            case ActionEnum.CREATE_MID_PERPENDICULAR:
+            case ActionEnum.CREATE_BISECTOR:
+            case ActionEnum.SET_SEGMENT_LENGHT:
+            case ActionEnum.SET_ANGLE_MEASURE:
+            case ActionEnum.DIVIDE_SEGMENT:
+            case ActionEnum.DIVIDE_ANGLE:
+            case ActionEnum.SET_EQUAL_SEGMENTS:
+            case ActionEnum.SET_EQUAL_ANGLES:
+                if(canBeCreated) { this.shapesAccumulator.push(this.createGliderPoint(x, y, line)); }
+                else { this.shapesAccumulator.push(duplicationPoint); }
                 break;
             default:
                 return;
@@ -413,6 +548,17 @@ export class Board {
                 if(this.shapesAccumulator.length == 1 && canBeCreated) { this.shapesAccumulator.push(this.createGliderPoint(x, y, circle)) }
                 else if(this.shapesAccumulator.length == 1) { this.shapesAccumulator.push(duplicationPoint); }
                 break;
+            case ActionEnum.CREATE_MID_PERPENDICULAR:
+            case ActionEnum.CREATE_BISECTOR:
+            case ActionEnum.SET_SEGMENT_LENGHT:
+            case ActionEnum.SET_ANGLE_MEASURE:
+            case ActionEnum.DIVIDE_SEGMENT:
+            case ActionEnum.DIVIDE_ANGLE:
+            case ActionEnum.SET_EQUAL_SEGMENTS:
+            case ActionEnum.SET_EQUAL_ANGLES:
+                if(canBeCreated) { this.shapesAccumulator.push(this.createGliderPoint(x, y, circle)); }
+                else { this.shapesAccumulator.push(duplicationPoint); }
+                break;
             default:
                 return;
         }
@@ -445,6 +591,15 @@ export class Board {
                 case ActionEnum.CREATE_PARALLEL_LINE:
                     this.createParallelLine(this.shapesAccumulator[0], this.shapesAccumulator[1]);
                     break;
+                case ActionEnum.CREATE_MID_PERPENDICULAR:
+                    this.createMidPerpendicular([this.shapesAccumulator[0], this.shapesAccumulator[1]]);
+                    break;
+                case ActionEnum.SET_SEGMENT_LENGHT:
+                    this.setSegmentLength([this.shapesAccumulator[0], this.shapesAccumulator[1]]);
+                    break;
+                case ActionEnum.DIVIDE_SEGMENT:
+                    this.divideSegmentRequestData([this.shapesAccumulator[0], this.shapesAccumulator[1]]);
+                    break;
                 default:
                     return;
             }
@@ -452,7 +607,32 @@ export class Board {
             this.shapesAccumulator = [];
         }
         else if(this.shapesAccumulator.length == 3) {
-            
+            switch(this.action) {
+                case ActionEnum.CREATE_BISECTOR:
+                    this.createBisectorRequestData([this.shapesAccumulator[0], this.shapesAccumulator[1], this.shapesAccumulator[2]]);
+                    break;
+                case ActionEnum.SET_ANGLE_MEASURE:
+                    this.setAngleMeasure([this.shapesAccumulator[0], this.shapesAccumulator[1], this.shapesAccumulator[2]]);
+                    break;
+                case ActionEnum.DIVIDE_ANGLE:
+                    this.divideAngleRequestData([this.shapesAccumulator[0], this.shapesAccumulator[1], this.shapesAccumulator[2]]);
+                    break;
+                case ActionEnum.SET_EQUAL_SEGMENTS:
+                case ActionEnum.SET_EQUAL_ANGLES:
+                default:
+                    return;
+            }
+
+            this.shapesAccumulator = [];
+        }
+        else if(this.shapesAccumulator.length == 6) {
+            switch(this.action) {
+                case ActionEnum.SET_EQUAL_ANGLES:
+                    this.setAnglesEquality([this.shapesAccumulator[0], this.shapesAccumulator[1], this.shapesAccumulator[2]], [this.shapesAccumulator[3], this.shapesAccumulator[4], this.shapesAccumulator[5]]);
+                    break;
+                default:
+                    return;
+            }
         }
     }
 
@@ -495,7 +675,7 @@ export class Board {
         }
 
         for(const ip of intersectionPoints) {
-            if(Number.isNaN(ip.coords.usrCoords[1]) || Number.isNaN(ip.coords.usrCoords[2])) {
+            if(Number.isNaN(xCoord(ip)) || Number.isNaN(yCoord(ip))) {
                 this.boardScheme.setIntersectionState(ip, false, []); 
                 continue; 
             }

@@ -14,6 +14,14 @@ export function isCircle(object: any): boolean {
     return object.elType == 'circle';
 }
 
+export function xCoord(point: any): number {
+    return point.coords.usrCoords[1];
+}
+
+export function yCoord(point: any): number {
+    return point.coords.usrCoords[2];
+}
+
 export function distance(point1: any, point2: any): number {
     const dx = point1.coords.usrCoords[1] - point2.coords.usrCoords[1];
     const dy = point1.coords.usrCoords[2] - point2.coords.usrCoords[2];

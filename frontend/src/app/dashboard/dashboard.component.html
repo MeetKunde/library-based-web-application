@@ -1,14 +1,43 @@
 <mat-sidenav-container>
-    <mat-sidenav mode="side" opened>
-        <div class="grid-container">
+    <mat-sidenav [hidden]="tabLabel=='solution'" mode="side" opened>
+        
+        <div [hidden]="tabLabel != 'exercise'" class="grid-container">
             <button mat-icon-button [class.creator-icon-button]="!button.highlightButton()" [class.creator-icon-button-selected]="button.highlightButton()" *ngFor="let button of actionButtons" matTooltip="{{button.tooltip}}" (click)="button.actionToDo();">
                 <mat-icon svgIcon="{{button.name}}"></mat-icon>
             </button>
         </div>
+
+        <div [hidden]="tabLabel != 'settings'">
+
+            <div class="grid-container">
+                <button mat-icon-button class="creator-icon-button">
+                    <mat-icon></mat-icon>
+                </button>
+            </div>
+
+            <span> Board Configuration </span>
+
+            <div class="grid-container">
+                <button mat-icon-button class="creator-icon-button">
+                    <mat-icon></mat-icon>
+                </button>
+            </div>
+
+            <span> Graph Configuration </span>
+
+            <div class="grid-container">
+                <button mat-icon-button class="creator-icon-button">
+                    <mat-icon></mat-icon>
+                </button>
+            </div>
+
+            <button mat-raised-button type="submit">Save Settings</button>
+
+        </div>
     </mat-sidenav>
     <mat-sidenav-content class="content-container"> 
 
-        <mat-card [hidden]="tabLabel != 'exercise'" class="main-content">
+        <mat-card class="main-content">
             <div id="jxgbox" class="mat-elevation-z8 jxgbox-board" style="width: 100%; height: 100%"></div>
         </mat-card>
 
@@ -16,20 +45,11 @@
             Solution Presenting
         </mat-card>
 
-        <mat-card [hidden]="tabLabel != 'settings'" class="main-content">
-            <form class="example-form" [formGroup]="formGroup" (ngSubmit)="alertFormValues(formGroup)" ngNativeValidate>
-
-                <mat-slide-toggle formControlName="showAxis">Show Axes</mat-slide-toggle>
-                <mat-slide-toggle formControlName="keepRatio">Keep Aspect Ratio</mat-slide-toggle>
-                            
-                <button mat-raised-button type="submit">Save Settings</button>
-              </form>
-        </mat-card>
-
         <div class="tab-labels">
             <button mat-flat-button [class.vertical-tab-button]="tabLabel != 'exercise'" [class.vertical-tab-button-selected]="tabLabel == 'exercise'" (click)="setTab('exercise');">Excercise</button>
             <button mat-flat-button [class.vertical-tab-button]="tabLabel != 'solution'" [class.vertical-tab-button-selected]="tabLabel == 'solution'" class="vertical-tab-button" (click)="setTab('solution');">Solution</button>
             <button mat-flat-button [class.vertical-tab-button]="tabLabel != 'settings'" [class.vertical-tab-button-selected]="tabLabel == 'settings'" class="vertical-tab-button" (click)="setTab('settings');">Settings</button>
         </div>
+
     </mat-sidenav-content>
 </mat-sidenav-container>

@@ -1,4 +1,41 @@
 /* You can add global styles to this file, and also import other style files */
 
 html, body { height: 100%; }
+
 body { margin: 0; font-family: 'Quicksand', sans-serif; }
+
+:root {
+    --primary-color: #2C3C5B;
+    --secondary-color: #0AC5A8;
+    --white-color: #FFFFFF;
+    --success-color: #198754;
+    --delete-color: #dc3545;
+    --background-color: #F2F2F2;
+}
+  
+.custom-info-snackbar {
+    --mdc-snackbar-container-color: var(--primary-color);
+}
+
+.custom-info-snackbar .mat-mdc-snack-bar-label {
+    padding-top: 5px!important;
+    padding-bottom: 5px!important;
+}
+
+.custom-success-snackbar {
+    --mdc-snackbar-container-color: var(--success-color);
+}
+
+.custom-success-snackbar .mat-mdc-snack-bar-label {
+    padding-top: 5px!important;
+    padding-bottom: 5px!important;
+}
+
+.custom-error-snackbar {
+    --mdc-snackbar-container-color: var(--delete-color);
+}
+
+.custom-error-snackbar .mat-mdc-snack-bar-label {
+    padding-top: 5px!important;
+    padding-bottom: 5px!important;
+}

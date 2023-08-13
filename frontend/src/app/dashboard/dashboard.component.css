@@ -99,9 +99,11 @@ mat-sidenav-container {
     display: none !important;
 }
 
-.example-form mat-slide-toggle {
+.settings-form mat-slide-toggle {
     margin: 8px 0;
-    display: block;
+    display: flex;
+    flex-direction: column;
+    color: white;
 }
 
 .creator-icon-button {

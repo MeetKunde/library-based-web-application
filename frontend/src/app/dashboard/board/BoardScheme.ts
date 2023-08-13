@@ -6,22 +6,24 @@ type CircleType = {obj: any, center: string, pointsOn: Set<string>};
 type LineCircleType = {obj: any, pointsOn: Set<string>};
 
 export class BoardScheme {
-    private points: string[];
-    private gliders: string[];
-    private intersections: string[];
-    private segments: string[];
-    private rays: string[];
-    private lines: string[];
-    private circles: string[];
-    private shapes: { [key: string]: PointType | LineType | CircleType };
+    private points: string[];           // id
+    private gliders: string[];          // id
+    private intersections: string[];    // id
+    private segments: string[];         // id
+    private rays: string[];             // id
+    private lines: string[];            // id
+    private circles: string[];          // id
+    private shapes: { [key: string]: PointType | LineType | CircleType };           // id: object descriptor
 
-    private perpendicularLines: [string, string][];
-    private parallelLines: [string, string][];
-    private midPerpendiculars: [string, string][];
-
-    private segmentLengths: string[];
-    private angleMeasures: string[];
-    private equations: string[];
+    private perpendicularLines: [string, string][];                                 // [line 1 id, line 2 id]
+    private parallelLines: [string, string][];                                      // [line 1 id, line 2 id]
+    private midPerpendiculars: [string, string, string][];                          // [segment end 1 id, segment end 2 id, line id]
+    private bisectors: [string, string, string, boolean, string][];                 // [angle end 1 id, angle vertex id, angle end 2 id, angle is convex, ]
+    private equalSegments: [string, string, string, string][];                      // [segment 1 end 1 id, segment 1 end 2 id, segment 2 end 1 id, segment 2 end 2 id]
+    private equalAngles: [string, string, string, string, string, string,][];       // [angle 1 end 1 id, angle 1 vertex id, angle 1 end 2 id, angle 2 end 1 id, angle 2 vertex id, angle 2 end 2 id]
+    private segmentLengths: [string, string, string][];                             // [segment end 1 id, segment end 2 id, string of formula]
+    private angleMeasures: [string, string, string, boolean, string][];             // [angle end 1 id, angle vertex id, angle end 2 id, angle is convex, string of formula]
+    private formulas: string[];                                                     // string of formula
 
     constructor() {
         this.points = [];
@@ -36,10 +38,13 @@ export class BoardScheme {
         this.perpendicularLines = [];
         this.parallelLines = [];
         this.midPerpendiculars = [];
+        this.bisectors = [];
 
+        this.equalSegments = [];
+        this.equalAngles = [];
         this.segmentLengths = [];
         this.angleMeasures = [];
-        this.equations = [];
+        this.formulas = [];
     }
 
     addPoint(pointObject: any): void {
@@ -108,6 +113,56 @@ export class BoardScheme {
         this.parallelLines.push([lineObject.id, baseLineObject.id]);
     }
 
+    addMidPerpendicular(segmentEnd1Object: any, segmentEnd2Object: any, lineObject: any): void {
+        this.midPerpendiculars.push([segmentEnd1Object.id, segmentEnd2Object.id, lineObject.id]);
+    }
+
+    addBisector(angleEnd1Object: any, angleVertexObject:any, angleEnd2Object: any, angleIsConvex: boolean, lineObject: any): void {
+        this.bisectors.push([angleEnd1Object.id, angleVertexObject.id, angleEnd2Object.id, angleIsConvex, lineObject.id]);
+    }
+
+    addEqualSegments(segment1End1Object: any, segment1End2Object: any, segment2End1Object: any, segment2End2Object: any): void {
+        this.equalSegments.push([segment1End1Object.id, segment1End2Object.id, segment2End1Object.id, segment2End2Object.id]);
+    }
+
+    addEqualAngles(angle1End1Object: any, angle1VertexObject: any, angle1End2Object: any, angle2End1Object: any, angle2VertexObject: any, angle2End2Object: any): void {
+        this.equalAngles.push([angle1End1Object.id, angle1VertexObject.id, angle1End2Object.id, angle2End1Object.id, angle2VertexObject.id, angle2End2Object.id]);
+    }
+
+    setSegmentLength(segmentEnd1Object: any, segmentEnd2Object: any, formula: string): void {
+        this.segmentLengths.push([segmentEnd1Object.id, segmentEnd2Object.id, formula]);
+    }
+
+    setAngleMeasure(angleEnd1Object: any, angleVertexObject: any, angleEnd2Object: any, angleIsConvex: boolean, formula: string): void {
+        this.angleMeasures.push([angleEnd1Object.id, angleVertexObject.id, angleEnd2Object.id, angleIsConvex, formula]);
+    }
+
+    addFormula(formula: string): void {
+        this.formulas.push(formula);
+    }
+
+    getLineByPoints(point1Id: string, point2Id: string): [boolean, string] {
+        for(const lineId of [...this.segments, ...this.rays, ...this.lines]) {
+            const line = this.shapes[lineId] as LineType;
+            if(line.pointsOn.has(point1Id) && line.pointsOn.has(point2Id)) {
+                return [true, lineId];
+            }
+        }
+
+        return [false, ''];
+    }
+
+    getCirlceByPoints(centerId: string, pointOnId: string): [boolean, string] {
+        for(const circleId of [...this.circles]) {
+            const circle = this.shapes[circleId] as CircleType;
+            if(circle.center == centerId && circle.pointsOn.has(pointOnId)) {
+                return [true, circleId];
+            }
+        }
+
+        return [false, ''];
+    }
+
     get(): BoardSchemeJson {
         console.log(this.shapes)
         var pointsList: PointJson[] = [];
@@ -167,8 +222,15 @@ export class BoardScheme {
             points: pointsList,
             lines: linesList,
             circles: circlesList,
-            perpendicular: this.perpendicularLines,
-            parallel: this.parallelLines
+            perpendicular: this.perpendicularLines.map((dependency) => ({ line1Id: dependency[0], line2Id: dependency[1] })),
+            parallel: this.parallelLines.map((dependency) => ({ line1Id: dependency[0], line2Id: dependency[1] })),
+            equalSegments: this.equalSegments.map((dependency) => ({ segment1End1Id: dependency[0], segment1End2Id: dependency[1], segment2End1Id: dependency[2], segment2End2Id: dependency[3] })),
+            equalAngles: this.equalAngles.map((dependency) => ({ angle1End1Id: dependency[0], angle1VertexId: dependency[1], angle1End2Id: dependency[2], angle2End1Id: dependency[3], angle2VertexId: dependency[4], angle2End2Id: dependency[5] })),
+            segmentLengths: this.segmentLengths.map((dependency) => ({ segmentEnd1Id: dependency[0], segmentEnd2Id: dependency[1], length: dependency[2] })),
+            angleMeasures: this.angleMeasures.map((dependency) => ({ angleEnd1Id: dependency[0], angleVertexId: dependency[1], angleEnd2Id: dependency[2], angleIsConvex: dependency[3], measure: dependency[4] })),
+            formulas: this.formulas,
+            midPerpendicular: this.midPerpendiculars.map((dependency) => ({ segmentEnd1Id: dependency[0], segmentEnd2Id: dependency[1], lineId: dependency[2] })),
+            bisectors: this.bisectors.map((dependency) => ({ angleEnd1Id: dependency[0], angleVertexId: dependency[1], angleEnd2Id: dependency[2], angleIsConvex: dependency[3], lineId: dependency[4] }))
         };
     }
 
