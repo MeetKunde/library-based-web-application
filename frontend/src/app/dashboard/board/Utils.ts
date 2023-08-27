@@ -7,7 +7,7 @@ export function isIntersectionPoint(object: any): boolean {
 }
 
 export function isLine(object: any): boolean {
-    return object.elType == 'line' || object.elType == 'perpendicular' || object.elType == 'parallel';
+    return object.elType == 'line' || object.elType == 'perpendicular' || object.elType == 'parallel' || object.elType == 'bisector';
 }
 
 export function isCircle(object: any): boolean {
@@ -27,4 +27,8 @@ export function distance(point1: any, point2: any): number {
     const dy = point1.coords.usrCoords[2] - point2.coords.usrCoords[2];
 
     return Math.sqrt(dx * dx + dy * dy);
+}
+
+export function genRandom(lowerBound: number, upperBound: number): number {
+    return lowerBound + (upperBound - lowerBound) * Math.random();
 }

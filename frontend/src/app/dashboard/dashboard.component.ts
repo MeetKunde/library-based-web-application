@@ -1,4 +1,4 @@
-import { Component, numberAttribute } from '@angular/core';
+import { Component } from '@angular/core';
 import { MatIconRegistry } from '@angular/material/icon';
 import { DomSanitizer } from '@angular/platform-browser';
 import { Board } from './board/Board'
@@ -34,29 +34,31 @@ export class DashboardComponent {
     {name: 'parallelism', tooltip: 'Create Parallel Line', imagePath: '../../assets/button-images/ParallelismIcon.svg', actionToDo: () => { this.board?.changeAction(ActionEnum.CREATE_PARALLEL_LINE); this.openInstructionSnackBar(); }, highlightButton: () => { return this.board?.getAction() == ActionEnum.CREATE_PARALLEL_LINE; }},
     {name: 'mid-perpendicular', tooltip: 'Create Mid-Perpendicular', imagePath: '../../assets/button-images/MidPerpendicularIcon.svg', actionToDo: () => { this.board?.changeAction(ActionEnum.CREATE_MID_PERPENDICULAR); this.openInstructionSnackBar(); }, highlightButton: () => { return this.board?.getAction() == ActionEnum.CREATE_MID_PERPENDICULAR; }},
     {name: 'bisector', tooltip: 'Create Bisector', imagePath: '../../assets/button-images/BisectorIcon.svg', actionToDo: () => { this.board?.changeAction(ActionEnum.CREATE_BISECTOR); this.openInstructionSnackBar(); }, highlightButton: () => { return this.board?.getAction() == ActionEnum.CREATE_BISECTOR; }},
-    {name: 'setLength', tooltip: 'Set Segment Length', imagePath: '../../assets/button-images/SegmentLengthIcon.svg', actionToDo: () => { this.board?.changeAction(ActionEnum.SET_SEGMENT_LENGHT); this.openInstructionSnackBar(); }, highlightButton: () => { return this.board?.getAction() == ActionEnum.SET_SEGMENT_LENGHT; }},
-    {name: 'setAngle', tooltip: 'Set Angle Measure', imagePath: '../../assets/button-images/AngleMeasureIcon.svg', actionToDo: () => { this.board?.changeAction(ActionEnum.SET_ANGLE_MEASURE); this.openInstructionSnackBar(); }, highlightButton: () => { return this.board?.getAction() == ActionEnum.SET_ANGLE_MEASURE; }},
-    {name: 'setEquation', tooltip: 'Enter Equation', imagePath: '../../assets/button-images/EquationIcon.svg', actionToDo: () => { this.board?.changeAction(ActionEnum.ENTER_FORMULA); /*this.openInstructionSnackBar();*/ }, highlightButton: () => { return false; }},
+    {name: 'incircle', tooltip: 'Create Incircle', imagePath: '../../assets/button-images/IncircleIcon.svg', actionToDo: () => { this.board?.changeAction(ActionEnum.CREATE_INCIRCLE); }, highlightButton: () => { return this.board?.getAction() == ActionEnum.CREATE_INCIRCLE; }},
+    {name: 'circumcircle', tooltip: 'Create Circumcircle', imagePath: '../../assets/button-images/CircumcircleIcon.svg', actionToDo: () => { this.board?.changeAction(ActionEnum.CREATE_CIRCUMCIRCLE); }, highlightButton: () => { return this.board?.getAction() == ActionEnum.CREATE_CIRCUMCIRCLE; }},
+    {name: 'escribedCircle', tooltip: 'Create Escribed Circle', imagePath: '../../assets/button-images/EscribedCircleIcon.svg', actionToDo: () => { this.board?.changeAction(ActionEnum.CREATE_ESCRIBED_CIRCLE); }, highlightButton: () => { return this.board?.getAction() == ActionEnum.CREATE_ESCRIBED_CIRCLE; }},
     {name: 'divideSegment', tooltip: 'Divide Segment', imagePath: '../../assets/button-images/DivideSegmentIcon.svg', actionToDo: () => { this.board?.changeAction(ActionEnum.DIVIDE_SEGMENT); this.openInstructionSnackBar(); }, highlightButton: () => { return this.board?.getAction() == ActionEnum.DIVIDE_SEGMENT; }},
     {name: 'divideAngle', tooltip: 'Divide Angle', imagePath: '../../assets/button-images/DivideAngleIcon.svg', actionToDo: () => { this.board?.changeAction(ActionEnum.DIVIDE_ANGLE); this.openInstructionSnackBar(); }, highlightButton: () => { return this.board?.getAction() == ActionEnum.DIVIDE_ANGLE; }},
     {name: 'equalSegments', tooltip: 'Set Equal Segments', imagePath: '../../assets/button-images/EqualLengthsIcon.svg', actionToDo: () => { this.board?.changeAction(ActionEnum.SET_EQUAL_SEGMENTS); this.openInstructionSnackBar(); }, highlightButton: () => { return this.board?.getAction() == ActionEnum.SET_EQUAL_SEGMENTS; }},
     {name: 'equalAngles', tooltip: 'Set Equal Angles', imagePath: '../../assets/button-images/EqualAnglesIcon.svg', actionToDo: () => { this.board?.changeAction(ActionEnum.SET_EQUAL_ANGLES); this.openInstructionSnackBar(); }, highlightButton: () => { return this.board?.getAction() == ActionEnum.SET_EQUAL_ANGLES; }},
-    /*
-    {name: 'tangent', imagePath: '../../assets/button-images/Icon.svg', onClick: () => { }},
-    {name: 'incscribedCircle', imagePath: '../../assets/button-images/Icon.svg', onClick: () => { }},
-    {name: 'describedCircle', imagePath: '../../assets/button-images/Icon.svg', onClick: () => { }},
-    {name: 'escribedCircle', imagePath: '../../assets/button-images/Icon.svg', onClick: () => { }},
-    {name: 'triangle', imagePath: '../../assets/button-images/Icon.svg', onClick: () => { }},
-    {name: 'square', imagePath: '../../assets/button-images/Icon.svg', onClick: () => { }},
-    {name: 'rectangle', imagePath: '../../assets/button-images/Icon.svg', onClick: () => { }},
-    {name: 'polygon', imagePath: '../../assets/button-images/Icon.svg', onClick: () => { }},
-    {name: 'parallelogram', imagePath: '../../assets/button-images/Icon.svg', onClick: () => { }},
-    {name: 'kite', imagePath: '../../assets/button-images/Icon.svg', onClick: () => { }},
-    {name: 'rhombus', imagePath: '../../assets/button-images/Icon.svg', onClick: () => { }},
-    {name: 'trapezoid', imagePath: '../../assets/button-images/Icon.svg', onClick: () => { }},
-    {name: 'median', imagePath: '../../assets/button-images/Icon.svg', onClick: () => { }},
-    {name: 'altitude', imagePath: '../../assets/button-images/Icon.svg', onClick: () => { }},
-    {name: 'mid-segment', imagePath: '../../assets/button-images/Icon.svg', onClick: () => { }},*/
+    {name: 'tangentLine', tooltip: 'Create Tangent Line', imagePath: '../../assets/button-images/TangentCircleToLineIcon.svg', actionToDo: () => { this.board?.changeAction(ActionEnum.CREATE_TANGENT_LINE); }, highlightButton: () => { return this.board?.getAction() == ActionEnum.CREATE_TANGENT_LINE; }},
+    {name: 'tangentCircle', tooltip: 'Create Tangent Circle', imagePath: '../../assets/button-images/TangentCircleToCircleIcon.svg', actionToDo: () => { this.board?.changeAction(ActionEnum.CREATE_TANGENT_CIRCLE); }, highlightButton: () => { return this.board?.getAction() == ActionEnum.CREATE_TANGENT_CIRCLE; }},
+    {name: 'median', tooltip: 'Create Median', imagePath: '../../assets/button-images/MedianIcon.svg', actionToDo: () => { this.board?.changeAction(ActionEnum.CREATE_MEDIAN); }, highlightButton: () => { return this.board?.getAction() == ActionEnum.CREATE_MEDIAN; }},
+    {name: 'altitude', tooltip: 'Create Altitude', imagePath: '../../assets/button-images/AltitudeIcon.svg', actionToDo: () => { this.board?.changeAction(ActionEnum.CREATE_ALTITUDE); }, highlightButton: () => { return this.board?.getAction() == ActionEnum.CREATE_ALTITUDE; }},
+    {name: 'mid-segment', tooltip: 'Create Mid-Segment', imagePath: '../../assets/button-images/MidSegmentIcon.svg', actionToDo: () => { this.board?.changeAction(ActionEnum.CREATE_MID_SEGMENT); }, highlightButton: () => { return this.board?.getAction() == ActionEnum.CREATE_MID_SEGMENT; }},
+    {name: 'setLength', tooltip: 'Set Segment Length', imagePath: '../../assets/button-images/SegmentLengthIcon.svg', actionToDo: () => { this.board?.changeAction(ActionEnum.SET_SEGMENT_LENGHT); this.openInstructionSnackBar(); }, highlightButton: () => { return this.board?.getAction() == ActionEnum.SET_SEGMENT_LENGHT; }},
+    {name: 'setAngle', tooltip: 'Set Angle Measure', imagePath: '../../assets/button-images/AngleMeasureIcon.svg', actionToDo: () => { this.board?.changeAction(ActionEnum.SET_ANGLE_MEASURE); this.openInstructionSnackBar(); }, highlightButton: () => { return this.board?.getAction() == ActionEnum.SET_ANGLE_MEASURE; }},
+    {name: 'setEquation', tooltip: 'Enter Equation', imagePath: '../../assets/button-images/EquationIcon.svg', actionToDo: () => { this.board?.changeAction(ActionEnum.ENTER_FORMULA); /*this.openInstructionSnackBar();*/ }, highlightButton: () => { return false; }},
+    {name: 'setPerimeter', tooltip: 'Set Permimer', imagePath: '../../assets/button-images/PerimeterIcon.svg', actionToDo: () => { this.board?.changeAction(ActionEnum.SET_PERIMETER); this.openInstructionSnackBar(); }, highlightButton: () => { return this.board?.getAction() == ActionEnum.SET_PERIMETER; }},
+    {name: 'setArea', tooltip: 'Set Area', imagePath: '../../assets/button-images/AreaIcon.svg', actionToDo: () => { this.board?.changeAction(ActionEnum.SET_AREA); this.openInstructionSnackBar(); }, highlightButton: () => { return this.board?.getAction() == ActionEnum.SET_AREA; }},
+    {name: 'triangle', tooltip: 'Create Triangle', imagePath: '../../assets/button-images/TriangleIcon.svg', actionToDo: () => { this.board?.changeAction(ActionEnum.CREATE_TRIANGLE); this.openInstructionSnackBar(); }, highlightButton: () => { return this.board?.getAction() == ActionEnum.CREATE_TRIANGLE; }},
+    {name: 'square', tooltip: 'Create Square', imagePath: '../../assets/button-images/SquareIcon.svg', actionToDo: () => { this.board?.changeAction(ActionEnum.CREATE_SQUARE); this.openInstructionSnackBar(); }, highlightButton: () => { return this.board?.getAction() == ActionEnum.CREATE_SQUARE; }},
+    {name: 'rectangle', tooltip: 'Create Rectangle', imagePath: '../../assets/button-images/RectangleIcon.svg', actionToDo: () => { this.board?.changeAction(ActionEnum.CREATE_RECTANGLE); this.openInstructionSnackBar(); }, highlightButton: () => { return this.board?.getAction() == ActionEnum.CREATE_RECTANGLE; }},
+    {name: 'regularPolygon', tooltip: 'Create Regular Polygon', imagePath: '../../assets/button-images/RegularPolygonIcon.svg', actionToDo: () => { this.board?.changeAction(ActionEnum.CREATE_REGULAR_POLYGON); this.openInstructionSnackBar(); }, highlightButton: () => { return this.board?.getAction() == ActionEnum.CREATE_REGULAR_POLYGON; }},
+    {name: 'parallelogram', tooltip: 'Create Parallelogram', imagePath: '../../assets/button-images/ParallelogramIcon.svg', actionToDo: () => { this.board?.changeAction(ActionEnum.CREATE_PARALLELOGRAM); this.openInstructionSnackBar(); }, highlightButton: () => { return this.board?.getAction() == ActionEnum.CREATE_PARALLELOGRAM; }},
+    {name: 'kite', tooltip: 'Create Kite', imagePath: '../../assets/button-images/KiteIcon.svg', actionToDo: () => { this.board?.changeAction(ActionEnum.CREATE_KITE); this.openInstructionSnackBar(); }, highlightButton: () => { return this.board?.getAction() == ActionEnum.CREATE_KITE; }},
+    {name: 'rhombus', tooltip: 'Create Rhombus', imagePath: '../../assets/button-images/RhombusIcon.svg', actionToDo: () => { this.board?.changeAction(ActionEnum.CREATE_RHOMBUS); this.openInstructionSnackBar(); }, highlightButton: () => { return this.board?.getAction() == ActionEnum.CREATE_RHOMBUS; }},
+    {name: 'trapezoid', tooltip: 'Create Trapezoid', imagePath: '../../assets/button-images/TrapezoidIcon.svg', actionToDo: ()=> { this.board?.changeAction(ActionEnum.CREATE_TRAPEZOID); this.openInstructionSnackBar(); }, highlightButton: () => { return this.board?.getAction() == ActionEnum.CREATE_TRAPEZOID; }},
     {name: 'process', tooltip: 'Process Exercise', imagePath: '../../assets/button-images/ProcessIcon.svg', actionToDo: () => { }, highlightButton: () => { return false; }},
     {name: 'save', tooltip: 'Save Exercise', imagePath: '../../assets/button-images/SaveIcon.svg', actionToDo: () => { this.saveScheme(); }, highlightButton: () => { return false; }},
     {name: 'load', tooltip: 'Load Exercise', imagePath: '../../assets/button-images/LoadIcon.svg', actionToDo: () => { this.loadScheme(); }, highlightButton: () => { return false; }},
@@ -67,11 +69,9 @@ export class DashboardComponent {
   tabLabel: string;
 
   private boardId = 'jxgbox';
-  private minX = -100;
-  private maxX = 100;
-  private minY = 100;
-  private maxY = -100;
-  private showAxis = false;
+  private bounds: [number, number, number, number] = [-100, 100, 100, -100];
+  private maxBounds: [number, number, number, number] = [-400, 400, 300, -300];
+  private showAxis = true;
   private keepAspectRatio = true;
 
   constructor(
@@ -88,7 +88,7 @@ export class DashboardComponent {
 
   ngOnInit() {
     new Promise(resolve => setTimeout(resolve, 100)).then(() => {
-      this.board = new Board(this.boardId, [this.minX, this.maxX, this.minY, this.maxY], this.showAxis, this.keepAspectRatio, this.requestDataFromUser);
+      this.board = new Board(this.boardId, this.bounds, this.maxBounds, this.showAxis, this.keepAspectRatio, this.requestDataFromUser);
     });
   }
 
@@ -200,6 +200,6 @@ export class DashboardComponent {
 
   reinitializeBoard() {
     this.board?.detach();
-    this.board = new Board(this.boardId, [this.minX, this.maxX, this.minY, this.maxY], this.showAxis, this.keepAspectRatio, this.requestDataFromUser);
+    this.board = new Board(this.boardId, this.bounds, this.maxBounds, this.showAxis, this.keepAspectRatio, this.requestDataFromUser);
   } 
 }

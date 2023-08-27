@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   width="64"
+   height="64"
+   viewBox="0 0 64 64" >
+   <pattern id="diagonalHatch" patternUnits="userSpaceOnUse" width="4" height="4">
+    <path d="M-1,1 l2,-2
+            M0,4 l4,-4
+            M3,5 l2,-2" 
+            style="stroke-width:1" />
+    </pattern>
+
+   <path
+      style="stroke-width:5;"
+      fill="url(#diagonalHatch)"
+       inkscape:transform-center-x="-0.041773182"
+       inkscape:transform-center-y="-6.7649175"
+       transform="matrix(1.0017468,0,0,1.1439089,10.532305,31.445885)"
+       d="M 41.669969,19.015336 0.44733172,19.159795 28.290274,-18.839307 Z"
+       sodipodi:nodetypes="cccc" />
+</svg>

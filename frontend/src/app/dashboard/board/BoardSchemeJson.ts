@@ -67,7 +67,6 @@ export interface Bisector {
     angleEnd1Id: string,
     angleVertexId: string,
     angleEnd2Id: string,
-    angleIsConvex: boolean,
     lineId: string
 }
 

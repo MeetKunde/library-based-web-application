@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   width="64"
+   height="64"
+   viewBox="0 0 64 64" >
+   <circle
+      style="stroke-width:5; fill:none;"
+      cy="32"
+      cx="32"
+      r="24.545458" />
+    <path
+      sodipodi:type="star" 
+      style="stroke-width:5; fill:none;"
+      inkscape:flatsided="true"
+      sodipodi:sides="3"
+      sodipodi:cx="20.198107"
+      sodipodi:cy="12.19165"
+      sodipodi:r1="28.195759"
+      sodipodi:r2="22.810846"
+      sodipodi:arg1="1.2490458"
+      sodipodi:arg2="2.2962434"
+      inkscape:rounded="0"
+      inkscape:randomized="0"
+      d="M 29.114388,38.940496 -7.4252137,6.5389535 38.905146,-8.9044984 Z"
+      inkscape:transform-center-x="-1.9540718"
+      inkscape:transform-center-y="-0.04915136"
+      transform="matrix(0.74314222,0,0,0.74314222,16.353946,23.152159)" />
+</svg>

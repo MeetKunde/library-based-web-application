@@ -44,7 +44,7 @@ import { AngleIsConvexDialogComponent } from './dashboard/dialogs/angleIsConvexD
     EnterFormulaDialogComponent,
     SetSegmentLengthDialogComponent,
     SetAngleMeasureDialogComponent,
-    AngleIsConvexDialogComponent,
+    AngleIsConvexDialogComponent
   ],
   imports: [
     BrowserModule,

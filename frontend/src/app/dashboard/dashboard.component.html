@@ -1,5 +1,5 @@
 <mat-sidenav-container>
-    <mat-sidenav [hidden]="tabLabel=='solution'" mode="side" opened>
+    <mat-sidenav [disableClose]="true" [hidden]="tabLabel=='solution'" mode="side" opened>
         
         <div [hidden]="tabLabel != 'exercise'" class="grid-container">
             <button mat-icon-button [class.creator-icon-button]="!button.highlightButton()" [class.creator-icon-button-selected]="button.highlightButton()" *ngFor="let button of actionButtons" matTooltip="{{button.tooltip}}" (click)="button.actionToDo();">
