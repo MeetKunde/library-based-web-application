@@ -18,6 +18,8 @@ export class Board {
     private segmentHatchesCounter = 0;
     private anglesHatchesCounter = 0;
     private enteredFormulas: any[] = [];
+    private promptingShapes: any[] = [];
+    private highlightedShapes: any[] = [];
 
     private boardScheme: BoardScheme;
 
@@ -25,6 +27,7 @@ export class Board {
         this.board = JXG.JSXGraph.initBoard(boardId, { boundingbox: bounds, maxBoundingBox: maxBounds, showcopyright: false, axis: showAxis, keepAspectRatio: keepAspectRatio });
         this.board.on('down', this.handleBoardClick);
         this.board.on('update', this.handleBoardUpdate);
+        this.board.on('move', this.drawPromptingShapes);
 
         this.action = ActionEnum.NONE;
         this.shapeClicked = false;
@@ -35,6 +38,8 @@ export class Board {
         this.segmentHatchesCounter = 1;
         this.anglesHatchesCounter = 1;
         this.enteredFormulas = [];
+        this.promptingShapes = [];
+        this.highlightedShapes = [];
 
         this.boardScheme = new BoardScheme();
 
@@ -136,6 +141,16 @@ export class Board {
         return point;
     }
 
+    private createPromptingPoint(x: number, y: number): any {
+        const point = this.board.create('point', [x, y], { 
+            visible: false,
+            showInfobox: false,
+            label: {visible: false,}
+        });
+
+        return point;
+    }
+
     private createGliderPoint(x: number, y: number, shape: any): any {
         const point = this.board.create('glider', [x, y, shape], {
             name: this.getNextCapitalLetter(), 
@@ -188,6 +203,18 @@ export class Board {
         return segment;
     }
 
+    private createPromptingSegment(point1: any, point2: [number, number]): any {
+        const segment = this.board.create('line', [point1, point2], {
+            straightFirst: false,
+            straightLast: false,
+            strokeWidth: Sizes.STROKE_WIDTH,
+            color: Colors.TERTIARY,
+            highlightStrokeColor: Colors.TERTIARY
+        });
+
+        return segment;
+    }
+
     private createRay(point1: any, point2: any): any {
         const ray = this.board.create('line', [point1, point2], { 
             straightFirst: false,
@@ -199,6 +226,17 @@ export class Board {
         ray.on('down', (event: any) => { this.handleLineClick(event, ray); });
         this.boardScheme.addRay(ray);
         this.createIntersectionPoints(ray);
+
+        return ray;
+    }
+
+    private createPromptingRay(point1: any, point2: [number, number]): any {
+        const ray = this.board.create('line', [point1, point2], { 
+            straightFirst: false,
+            strokeWidth: Sizes.STROKE_WIDTH,
+            color: Colors.TERTIARY,
+            highlightStrokeColor: Colors.TERTIARY
+        });
 
         return ray;
     }
@@ -217,6 +255,16 @@ export class Board {
         return line;
     }
 
+    private createPromptingLine(point1: any, point2: [number, number]): any {
+        const line = this.board.create('line', [point1, point2], {
+            strokeWidth: Sizes.STROKE_WIDTH,
+            color: Colors.TERTIARY,
+            highlightStrokeColor: Colors.TERTIARY
+        });
+
+        return line;
+    }
+
     private createCircle(point1: any, point2: any): any {
         const circle = this.board.create('circle', [point1, point2], { 
             fillColor: 'none',
@@ -228,6 +276,17 @@ export class Board {
         circle.on('down', (event: any) => { this.handleCircleClick(event, circle); });
         this.boardScheme.addCircle(circle);
         this.createIntersectionPoints(circle);
+
+        return circle;
+    }
+
+    private createPromptingCircle(point1: any, point2: any): any {
+        const circle = this.board.create('circle', [point1, point2], { 
+            fillColor: 'none',
+            strokeWidth: Sizes.STROKE_WIDTH,
+            strokeColor: Colors.TERTIARY,
+            highlightStrokeColor: Colors.TERTIARY
+        });
 
         return circle;
     }
@@ -260,6 +319,10 @@ export class Board {
                 continue;
             }
 
+            if(this.promptingShapes.filter((promptingShape) => obj.id == promptingShape.id).length > 0) {
+                continue;
+            }
+
             if(isLine(obj) || isCircle(obj)) {
                 const point1 = JXG.Math.Geometry.meet(shape.stdform, obj.stdform, 0, this.board);
                 const point2 = JXG.Math.Geometry.meet(shape.stdform, obj.stdform, 1, this.board);
@@ -289,6 +352,16 @@ export class Board {
         return line;
     }
 
+    private createPromptingPerpendicularLine(baseLine: any, basePoint: any): any {
+        const line = this.board.create('perpendicular', [baseLine, basePoint], {
+            strokeWidth: Sizes.STROKE_WIDTH,
+            color: Colors.TERTIARY,
+            highlightStrokeColor: Colors.TERTIARY
+        });
+
+        return line;
+    }
+
     private createParallelLine(baseLine: any, basePoint: any): any {
         const line = this.board.create('parallel', [baseLine, basePoint], {
             strokeWidth: Sizes.STROKE_WIDTH,
@@ -299,6 +372,16 @@ export class Board {
         line.on('down', (event: any) => { this.handleLineClick(event, line); });
         this.boardScheme.addParallelism(line, baseLine, basePoint);
         this.createIntersectionPoints(line);
+
+        return line;
+    }
+
+    private createPromptingParallelLine(baseLine: any, basePoint: any): any {
+        const line = this.board.create('parallel', [baseLine, basePoint], {
+            strokeWidth: Sizes.STROKE_WIDTH,
+            color: Colors.TERTIARY,
+            highlightStrokeColor: Colors.TERTIARY
+        });
 
         return line;
     }
@@ -603,16 +686,60 @@ export class Board {
     }
 
     private showFormulas(): void {
-        console.log(this.board.getBoundingBox())
         const minX = this.board.getBoundingBox()[0];
         const maxY = this.board.getBoundingBox()[1];
+        const zoomX = this.board.zoomX;
+        const zoomY = this.board.zoomY;
 
-        var x = minX + Math.abs(minX) * Sizes.FORMULAS_SECTION_MARGIN;
-        var y = maxY - Math.abs(maxY) * Sizes.FORMULAS_SECTION_MARGIN;
+        var x = minX + Sizes.FORMULAS_SECTION_HORIZONTAL_MARGIN / zoomX;
+        var y = maxY - Sizes.FORMULAS_SECTION_VERTICAL_MARGIN / zoomY;
 
         for(let i = 0; i < this.enteredFormulas.length; i++) {
             this.enteredFormulas[i].setPositionDirectly(JXG.COORDS_BY_USER, [x, y]);
-            y -=  Math.abs(this.board.getBoundingBox()[1]) * Sizes.FORMULAS_LINE_HEIGHT;
+            y -= Sizes.FORMULAS_LINE_HEIGHT / zoomY;
+        }
+    }
+
+    private drawPromptingShapes = (event: any): void => {
+        this.promptingShapes.forEach((shape) => this.board.removeObject(shape));
+        this.promptingShapes = [];
+
+        const mouseCoords = this.board.getUsrCoordsOfMouse(event);
+        /*
+        const boundingbox = this.board.getBoundingBox();
+        if(mouseCoords[0] < 0.98 * boundingbox[0]) {
+            return;
+        }
+        if(mouseCoords[0] > 0.98 * boundingbox[2]) {
+            return;
+        }
+        if(mouseCoords[1] > 0.98 * boundingbox[1]) {
+            return;
+        }
+        if(mouseCoords[1] < 0.98 * boundingbox[3]) {
+            return;
+        }
+        */
+
+        if(this.action == ActionEnum.CREATE_SEGMENT && this.shapesAccumulator.length == 1) {
+            this.promptingShapes.push(this.createPromptingSegment(this.shapesAccumulator[0], mouseCoords));
+        }
+        else if(this.action == ActionEnum.CREATE_LINE && this.shapesAccumulator.length == 1) {
+            this.promptingShapes.push(this.createPromptingLine(this.shapesAccumulator[0], mouseCoords));
+        }
+        else if(this.action == ActionEnum.CREATE_RAY && this.shapesAccumulator.length == 1) {
+            this.promptingShapes.push(this.createPromptingRay(this.shapesAccumulator[0], mouseCoords));
+        }
+        else if(this.action == ActionEnum.CREATE_CIRCLE && this.shapesAccumulator.length == 1) {
+            this.promptingShapes.push(this.createPromptingCircle(this.shapesAccumulator[0], mouseCoords));
+        }
+        else if(this.action == ActionEnum.CREATE_PERPENDICULAR_LINE && this.shapesAccumulator.length == 1) {
+            const point = this.createPromptingPoint(mouseCoords[0], mouseCoords[1]);
+            this.promptingShapes.push(this.createPromptingPerpendicularLine(this.shapesAccumulator[0], point));
+        }
+        else if(this.action == ActionEnum.CREATE_PARALLEL_LINE && this.shapesAccumulator.length == 1) {
+            const point = this.createPromptingPoint(mouseCoords[0], mouseCoords[1]);
+            this.promptingShapes.push(this.createPromptingParallelLine(this.shapesAccumulator[0], point));
         }
     }
     
@@ -1104,6 +1231,15 @@ export class Board {
             case ActionEnum.CREATE_TRAPEZOID:
                 break;
         }
+
+        this.highlightedShapes.forEach((shape) => shape.setAttribute({color: Colors.PRIMARY}));
+        this.highlightedShapes = [];
+
+        this.shapesAccumulator.forEach((shape) => {
+            shape.setAttribute({color: Colors.SECONDARY});
+            this.highlightedShapes.push(shape);
+        });
+        this.board.update();
     }
 
     private getCoords(event: any): [x: number, y: number, canBeCreated: boolean, duplication: any] {
