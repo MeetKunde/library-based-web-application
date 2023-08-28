@@ -70,6 +70,8 @@ export class Board {
         else {
             this.action = action;   
             this.shapesAccumulator = [];
+            this.highlightShapes();
+            this.drawPromptingShapes(null);
         }
     }
 
@@ -534,7 +536,17 @@ export class Board {
     }
 
     private createTangentLine(circle: any, point: any): any {
-        return null;
+        const line = this.board.create('tangent', [circle, point], {
+            strokeWidth: Sizes.STROKE_WIDTH,
+            color: Colors.PRIMARY,
+            highlightStrokeColor: Colors.SECONDARY
+        });
+
+        line.on('down', (event: any) => { this.handleLineClick(event, line); });
+        //this.boardScheme.addTangentLine(line);
+        this.createIntersectionPoints(line);
+
+        return line;
     }
 
     private createTangentCircle(shape: any, point: any): any {
@@ -543,18 +555,33 @@ export class Board {
         else { return null; }
     }
 
-    private createTangentCircleToCircle(circle: any, point: any): any {
-        return null;
+    private createTangentCircleToCircle(circle: any, circleCenter: any): any {
+        const intersectionPoint = this.createPointFunCoord(function() {
+            var projection = JXG.Math.Geometry.projectPointToCircle(circleCenter, circle);
+            return projection.usrCoords;
+        });
+
+        const tangentCircle = this.createCircle(circleCenter, intersectionPoint);
+        this.board.update();
+
+        return tangentCircle;
     }
 
-    private createTangentCircleToLine(line: any, point: any): any {
-        return null;
+    private createTangentCircleToLine(line: any, circleCenter: any): any {
+        const intersectionPoint = this.createPointFunCoord(function() {
+            var projection = JXG.Math.Geometry.projectPointToLine(circleCenter, line);
+            return projection.usrCoords;
+        });
+
+        const tangentCircle = this.createCircle(circleCenter, intersectionPoint);
+        this.board.update();
+
+        return tangentCircle;
     }
 
-    private createdCircumcircle(trianglePoints: [any, any, any]): any {
-        const sortedPoints = JXG.Math.Geometry.sortVertices(trianglePoints)
-        const circumCenterCoords = JXG.Math.Geometry.circumcenter(...sortedPoints).usrCoords;
-        //const circumCenterCoords2 = JXG.Math.Geometry.incenter(...sortedPoints, this.board).usrCoords;
+    private createdCircumcircle(polygonPoints: any[]): any {
+        const circumCenterCoords = JXG.Math.Geometry.circumcenter(...polygonPoints).usrCoords;
+        //const circumCenterCoords2 = JXG.Math.Geometry.incenter(...polygonPoints, this.board).usrCoords;
         const circumCenter = this.createPoint(circumCenterCoords[1], circumCenterCoords[2]);
 
         //circle.on('down', (event: any) => { this.handleCircleClick(event, circle); });
@@ -563,18 +590,14 @@ export class Board {
 
     }
 
-    private createdIncircle(trianglePoints: [any, any, any]): any {
-        const sortedPoints = JXG.Math.Geometry.sortVertices(trianglePoints)
-        const bisector1SP = JXG.Math.Geometry.angleBisector(trianglePoints[0], trianglePoints[1], trianglePoints[2]);
-        const bisector2SP = JXG.Math.Geometry.angleBisector(trianglePoints[1], trianglePoints[2], trianglePoints[0]);
-        const xCoords = [100, 150];
-        const yCoords = [200, 130];
-        const bisector1 = JXG.Line(this.board, xCoords, yCoords);
+    private createdIncircle(polygonPoints: any[]): any {
+        //const bisector1SP = JXG.Math.Geometry.angleBisector(trianglePoints[0], trianglePoints[1], trianglePoints[2]);
+        //const bisector2SP = JXG.Math.Geometry.angleBisector(trianglePoints[1], trianglePoints[2], trianglePoints[0]);
+        //const xCoords = [100, 150];
+        //const yCoords = [200, 130];
+        //const bisector1 = JXG.Line(this.board, xCoords, yCoords);
        // const bisector2 = JXG.Line(this.board, trianglePoints[2], bisector2SecondPoint);
         //const inCenterCoords = JXG.Math.Geometry.meetLineLine(bisector1, bisector2, 0);
-        console.log(bisector1)
-      //  console.log(bisector2)
-        //console.log(inCenterCoords)
         //const inCenter = this.createPoint(inCenterCoords[1], inCenterCoords[2]);
 
         //circle.on('down', (event: any) => { this.handleCircleClick(event, circle); });
@@ -653,12 +676,40 @@ export class Board {
         });
     }
 
-    private addPerimeter(): void {
+    private addPerimeter(polygonPoints: any[]): void {
+        this.requestDataFromUser(RequestEnum.PERIMETER, (data) => {
+            const castedData = data as { perimeter: string };
 
+            var pointNames = '';
+            for(let i = 0; i < polygonPoints.length; i++) { pointNames += polygonPoints[i].name; }
+            const formula = 'P(' + pointNames + ') = ' + castedData.perimeter;
+            
+            this.boardScheme.addFormula(formula);
+            this.enteredFormulas.push(
+                this.board.create('text', [
+                    0, 0, formula], 
+                    { fontSize: Sizes.TEXT_FONT }
+                ));
+            this.showFormulas();
+        });
     }
 
-    private addArea(): void {
+    private addArea(polygonPoints: any[]): void {
+        this.requestDataFromUser(RequestEnum.AREA, (data) => {
+            const castedData = data as { area: string };
 
+            var pointNames = '';
+            for(let i = 0; i < polygonPoints.length; i++) { pointNames += polygonPoints[i].name; }
+            const formula = 'A(' + pointNames + ') = ' + castedData.area;
+            
+            this.boardScheme.addFormula(formula);
+            this.enteredFormulas.push(
+                this.board.create('text', [
+                    0, 0, formula], 
+                    { fontSize: Sizes.TEXT_FONT }
+                ));
+            this.showFormulas();
+        });
     }
 
     private showSegmentLength(point1: any, point2: any, value: string): void {
@@ -704,7 +755,10 @@ export class Board {
         this.promptingShapes.forEach((shape) => this.board.removeObject(shape));
         this.promptingShapes = [];
 
+        if(event === null) { return; }
+
         const mouseCoords = this.board.getUsrCoordsOfMouse(event);
+
         /*
         const boundingbox = this.board.getBoundingBox();
         if(mouseCoords[0] < 0.98 * boundingbox[0]) {
@@ -741,6 +795,17 @@ export class Board {
             const point = this.createPromptingPoint(mouseCoords[0], mouseCoords[1]);
             this.promptingShapes.push(this.createPromptingParallelLine(this.shapesAccumulator[0], point));
         }
+    }
+
+    private highlightShapes = (): void => {
+        this.highlightedShapes.forEach((shape) => shape.setAttribute({strokeColor: Colors.PRIMARY}));
+        this.highlightedShapes = [];
+
+        this.shapesAccumulator.forEach((shape) => {
+            shape.setAttribute({strokeColor: Colors.SECONDARY});
+            this.highlightedShapes.push(shape);
+        });
+        this.board.update();
     }
     
     private handleBoardClick = (event: any): void => {        
@@ -800,6 +865,10 @@ export class Board {
             case ActionEnum.CREATE_TANGENT_LINE:
                 break;
             case ActionEnum.CREATE_TANGENT_CIRCLE:
+                if(Options.ALLOW_CREATING_POINTS_FOR_LINES_AND_CIRCLES_CREATING) {
+                    if(this.shapesAccumulator.length == 1 && canBeCreated) { this.shapesAccumulator.push(this.createPoint(x, y)) }
+                    else if(this.shapesAccumulator.length == 1) { this.shapesAccumulator.push(duplicationPoint); }
+                }
                 break;
             case ActionEnum.CREATE_TRIANGLE:
             case ActionEnum.CREATE_SQUARE:
@@ -866,8 +935,10 @@ export class Board {
                 this.shapesAccumulator.push(point);
                 break;
             case ActionEnum.CREATE_TANGENT_LINE:
+                if(this.shapesAccumulator.length == 1 && this.boardScheme.pointLiesOnCircle(this.shapesAccumulator[0].id, point.id)) { this.shapesAccumulator.push(point) }
                 break;
             case ActionEnum.CREATE_TANGENT_CIRCLE:
+                if(this.shapesAccumulator.length == 1) { this.shapesAccumulator.push(point) }
                 break;
             case ActionEnum.CREATE_TRIANGLE:
             case ActionEnum.CREATE_SQUARE:
@@ -953,6 +1024,13 @@ export class Board {
             case ActionEnum.CREATE_TANGENT_LINE:
                 break;
             case ActionEnum.CREATE_TANGENT_CIRCLE:
+                if(Options.ALLOW_CREATING_POINTS_FOR_LINES_AND_CIRCLES_CREATING) {
+                    if(this.shapesAccumulator.length == 0) { this.shapesAccumulator.push(line); }
+                    else if(this.shapesAccumulator.length == 1) {
+                        if(canBeCreated) { this.shapesAccumulator.push(this.createGliderPoint(x, y, line)); }
+                        else { this.shapesAccumulator.push(duplicationPoint); }
+                    }
+                }
                 break;
             case ActionEnum.CREATE_TRIANGLE:
             case ActionEnum.CREATE_SQUARE:
@@ -1037,8 +1115,28 @@ export class Board {
                 }
                 break;
             case ActionEnum.CREATE_TANGENT_LINE:
+                if(Options.ALLOW_CREATING_POINTS_FOR_LINES_AND_CIRCLES_CREATING) {
+                    if(this.shapesAccumulator.length == 0) { this.shapesAccumulator.push(circle); }
+                    else if(this.shapesAccumulator.length == 1 && circle.id == this.shapesAccumulator[0].id) {
+                        if(canBeCreated) { this.shapesAccumulator.push(this.createGliderPoint(x, y, circle)); }
+                        else { this.shapesAccumulator.push(duplicationPoint); }
+                    }
+                }
+                else {
+                    if(this.shapesAccumulator.length == 0) { this.shapesAccumulator.push(circle); }
+                }
                 break;
             case ActionEnum.CREATE_TANGENT_CIRCLE:
+                if(Options.ALLOW_CREATING_POINTS_FOR_LINES_AND_CIRCLES_CREATING) {
+                    if(this.shapesAccumulator.length == 0) { this.shapesAccumulator.push(circle); }
+                    else if(this.shapesAccumulator.length == 1) {
+                        if(canBeCreated) { this.shapesAccumulator.push(this.createGliderPoint(x, y, circle)); }
+                        else { this.shapesAccumulator.push(duplicationPoint); }
+                    }
+                }
+                else {
+                    if(this.shapesAccumulator.length == 0) { this.shapesAccumulator.push(circle); }
+                }
                 break;
             case ActionEnum.CREATE_TRIANGLE:
             case ActionEnum.CREATE_SQUARE:
@@ -1142,7 +1240,7 @@ export class Board {
                 break;
             case ActionEnum.CREATE_TANGENT_LINE:
                 if(this.shapesAccumulator.length == 2) { 
-                    this.createTangentLine(this.shapesAccumulator[0], this.shapesAccumulator[0]); 
+                    this.createTangentLine(this.shapesAccumulator[0], this.shapesAccumulator[1]); 
                     this.shapesAccumulator = [];
                 }    
                 break;
@@ -1153,14 +1251,14 @@ export class Board {
                 }
                 break; 
             case ActionEnum.CREATE_CIRCUMCIRCLE:
-                if(this.shapesAccumulator.length == 3) { 
-                    this.createdCircumcircle([this.shapesAccumulator[0], this.shapesAccumulator[1], this.shapesAccumulator[2]]); 
+                if(this.pointsRecur(this.shapesAccumulator)) { 
+                    this.createdCircumcircle(this.shapesAccumulator.slice(0, this.shapesAccumulator.length - 1)); 
                     this.shapesAccumulator = [];
                 }
                 break;
             case ActionEnum.CREATE_INCIRCLE:
-                if(this.shapesAccumulator.length == 3) { 
-                    this.createdIncircle([this.shapesAccumulator[0], this.shapesAccumulator[1], this.shapesAccumulator[2]]); 
+                if(this.pointsRecur(this.shapesAccumulator)) { 
+                    this.createdIncircle(this.shapesAccumulator.slice(0, this.shapesAccumulator.length - 1));  
                     this.shapesAccumulator = [];
                 }
                 break;
@@ -1203,14 +1301,14 @@ export class Board {
             case ActionEnum.ENTER_FORMULA:
                 break;
             case ActionEnum.SET_PERIMETER:
-                if(this.shapesAccumulator.length == 1) { 
-                    this.addPerimeter(); 
+                if(this.pointsRecur(this.shapesAccumulator)) { 
+                    this.addPerimeter(this.shapesAccumulator.slice(0, this.shapesAccumulator.length - 1)); 
                     this.shapesAccumulator = [];
                 }
                 break;
             case ActionEnum.SET_AREA:
-                if(this.shapesAccumulator.length == 1) { 
-                    this.addArea(); 
+                if(this.pointsRecur(this.shapesAccumulator)) { 
+                    this.addArea(this.shapesAccumulator.slice(0, this.shapesAccumulator.length - 1)); 
                     this.shapesAccumulator = [];
                 }
                 break;
@@ -1232,14 +1330,13 @@ export class Board {
                 break;
         }
 
-        this.highlightedShapes.forEach((shape) => shape.setAttribute({color: Colors.PRIMARY}));
-        this.highlightedShapes = [];
+        this.highlightShapes();
+    }
 
-        this.shapesAccumulator.forEach((shape) => {
-            shape.setAttribute({color: Colors.SECONDARY});
-            this.highlightedShapes.push(shape);
-        });
-        this.board.update();
+    private pointsRecur(points: any[]): boolean {
+        const lastPointId = points[points.length - 1].id;
+
+        return points.filter((point) => point.id == lastPointId).length > 1;
     }
 
     private getCoords(event: any): [x: number, y: number, canBeCreated: boolean, duplication: any] {

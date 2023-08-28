@@ -30,6 +30,8 @@ import { EnterFormulaDialogComponent } from './dashboard/dialogs/enterFormula.co
 import { SetSegmentLengthDialogComponent } from './dashboard/dialogs/setSegmentLength.component';
 import { SetAngleMeasureDialogComponent } from './dashboard/dialogs/setAngleMeasure.component';
 import { AngleIsConvexDialogComponent } from './dashboard/dialogs/angleIsConvexDialog.component';
+import { SetPerimeterDialogComponent } from './dashboard/dialogs/setPerimeter.component';
+import { SetAreaDialogComponent } from './dashboard/dialogs/setArea.component';
 
 
 
@@ -44,7 +46,9 @@ import { AngleIsConvexDialogComponent } from './dashboard/dialogs/angleIsConvexD
     EnterFormulaDialogComponent,
     SetSegmentLengthDialogComponent,
     SetAngleMeasureDialogComponent,
-    AngleIsConvexDialogComponent
+    AngleIsConvexDialogComponent,
+    SetPerimeterDialogComponent,
+    SetAreaDialogComponent,
   ],
   imports: [
     BrowserModule,

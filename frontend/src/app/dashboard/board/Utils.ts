@@ -7,7 +7,7 @@ export function isIntersectionPoint(object: any): boolean {
 }
 
 export function isLine(object: any): boolean {
-    return object.elType == 'line' || object.elType == 'perpendicular' || object.elType == 'parallel' || object.elType == 'bisector';
+    return object.elType == 'line' || object.elType == 'perpendicular' || object.elType == 'parallel' || object.elType == 'tangent';
 }
 
 export function isCircle(object: any): boolean {

@@ -163,6 +163,14 @@ export class BoardScheme {
         return [false, ''];
     }
 
+    pointLiesOnLine(lineId: string, pointId: string): boolean {
+        return (this.shapes[lineId] as LineCircleType).pointsOn.has(pointId);
+    }
+
+    pointLiesOnCircle(circleId: string, pointId: string): boolean {
+        return (this.shapes[circleId] as LineCircleType).pointsOn.has(pointId);
+    }
+
     get(): BoardSchemeJson {
         console.log(this.shapes)
         var pointsList: PointJson[] = [];

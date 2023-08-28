@@ -14,6 +14,8 @@ import { EnterFormulaDialogComponent } from './dialogs/enterFormula.component';
 import { SetSegmentLengthDialogComponent } from './dialogs/setSegmentLength.component';
 import { SetAngleMeasureDialogComponent } from './dialogs/setAngleMeasure.component';
 import { AngleIsConvexDialogComponent } from './dialogs/angleIsConvexDialog.component';
+import { SetPerimeterDialogComponent } from './dialogs/setPerimeter.component';
+import { SetAreaDialogComponent } from './dialogs/setArea.component';
 
 
 @Component({
@@ -49,7 +51,7 @@ export class DashboardComponent {
     {name: 'setLength', tooltip: 'Set Segment Length', imagePath: '../../assets/button-images/SegmentLengthIcon.svg', actionToDo: () => { this.board?.changeAction(ActionEnum.SET_SEGMENT_LENGHT); this.openInstructionSnackBar(); }, highlightButton: () => { return this.board?.getAction() == ActionEnum.SET_SEGMENT_LENGHT; }},
     {name: 'setAngle', tooltip: 'Set Angle Measure', imagePath: '../../assets/button-images/AngleMeasureIcon.svg', actionToDo: () => { this.board?.changeAction(ActionEnum.SET_ANGLE_MEASURE); this.openInstructionSnackBar(); }, highlightButton: () => { return this.board?.getAction() == ActionEnum.SET_ANGLE_MEASURE; }},
     {name: 'setEquation', tooltip: 'Enter Equation', imagePath: '../../assets/button-images/EquationIcon.svg', actionToDo: () => { this.board?.changeAction(ActionEnum.ENTER_FORMULA); /*this.openInstructionSnackBar();*/ }, highlightButton: () => { return false; }},
-    {name: 'setPerimeter', tooltip: 'Set Permimer', imagePath: '../../assets/button-images/PerimeterIcon.svg', actionToDo: () => { this.board?.changeAction(ActionEnum.SET_PERIMETER); this.openInstructionSnackBar(); }, highlightButton: () => { return this.board?.getAction() == ActionEnum.SET_PERIMETER; }},
+    {name: 'setPerimeter', tooltip: 'Set Perimeter', imagePath: '../../assets/button-images/PerimeterIcon.svg', actionToDo: () => { this.board?.changeAction(ActionEnum.SET_PERIMETER); this.openInstructionSnackBar(); }, highlightButton: () => { return this.board?.getAction() == ActionEnum.SET_PERIMETER; }},
     {name: 'setArea', tooltip: 'Set Area', imagePath: '../../assets/button-images/AreaIcon.svg', actionToDo: () => { this.board?.changeAction(ActionEnum.SET_AREA); this.openInstructionSnackBar(); }, highlightButton: () => { return this.board?.getAction() == ActionEnum.SET_AREA; }},
     {name: 'triangle', tooltip: 'Create Triangle', imagePath: '../../assets/button-images/TriangleIcon.svg', actionToDo: () => { this.board?.changeAction(ActionEnum.CREATE_TRIANGLE); this.openInstructionSnackBar(); }, highlightButton: () => { return this.board?.getAction() == ActionEnum.CREATE_TRIANGLE; }},
     {name: 'square', tooltip: 'Create Square', imagePath: '../../assets/button-images/SquareIcon.svg', actionToDo: () => { this.board?.changeAction(ActionEnum.CREATE_SQUARE); this.openInstructionSnackBar(); }, highlightButton: () => { return this.board?.getAction() == ActionEnum.CREATE_SQUARE; }},
@@ -173,6 +175,20 @@ export class DashboardComponent {
           var partsNumber: number = parseInt(data.stringValue);
           var angleIsConvex: boolean = data.booleanValue;
           if(Number.isInteger(partsNumber) && partsNumber > 1) { callback({ partsNumber: partsNumber, angleIsConvex: angleIsConvex }); }
+          else { this.openErrorSnackBar('Incorrect data have been entered'); }
+        });
+        break;
+      case RequestEnum.PERIMETER:
+        this.openRequestDataDialog(SetPerimeterDialogComponent, (data: { stringValue: string, booleanValue: boolean }) => {
+          var perimeter: string = data.stringValue;
+          if(perimeter.length > 0) { callback({ perimeter: perimeter }); }
+          else { this.openErrorSnackBar('Incorrect data have been entered'); }
+        });
+        break;
+      case RequestEnum.AREA:
+        this.openRequestDataDialog(SetAreaDialogComponent, (data: { stringValue: string, booleanValue: boolean }) => {
+          var area: string = data.stringValue;
+          if(area.length > 0) { callback({ area: area }); }
           else { this.openErrorSnackBar('Incorrect data have been entered'); }
         });
         break;
