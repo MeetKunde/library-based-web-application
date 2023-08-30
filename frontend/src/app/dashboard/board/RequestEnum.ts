@@ -6,7 +6,8 @@ export enum RequestEnum {
     PARTS_NUMBER_TO_DIVIDE_SEGMENT,
     PARTS_NUMBER_AND_IS_CONVEX_TO_DIVIDE_ANGLE,
     PERIMETER,
-    AREA
+    AREA,
+    POLYGON_SIDES_NUMBER,
 };
 
 export type AnswearType = 
@@ -17,4 +18,5 @@ export type AnswearType =
     { partsNumber: number } |
     { partsNumber: number, angleIsConvex: boolean } |
     { perimeter: string } |
-    { area: string }
+    { area: string } |
+    { sides: number }

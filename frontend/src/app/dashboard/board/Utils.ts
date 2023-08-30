@@ -11,7 +11,7 @@ export function isLine(object: any): boolean {
 }
 
 export function isCircle(object: any): boolean {
-    return object.elType == 'circle';
+    return object.elType == 'circle' || object.elType == 'circumcircle' || object.elType == 'incircle';
 }
 
 export function xCoord(point: any): number {

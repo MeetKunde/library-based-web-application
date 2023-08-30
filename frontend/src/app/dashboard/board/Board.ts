@@ -12,6 +12,7 @@ export class Board {
     private action: ActionEnum;
     private shapeClicked: boolean;
     private shapesAccumulator: any[];
+    private noIntersect: [string, string][];
 
     private capitalLettersCounter = 0;
     private lowercaseLettersCounter = 0;
@@ -32,6 +33,7 @@ export class Board {
         this.action = ActionEnum.NONE;
         this.shapeClicked = false;
         this.shapesAccumulator = [];
+        this.noIntersect = [];
 
         this.capitalLettersCounter = 0;
         this.lowercaseLettersCounter = 0;
@@ -50,16 +52,6 @@ export class Board {
         document.getElementById('jxgbox_navigation_down')!.addEventListener('click', () => { this.showFormulas(); });
         document.getElementById('jxgbox_navigation_up')!.addEventListener('click', () => { this.showFormulas(); });
         document.getElementById('jxgbox_navigation_right')!.addEventListener('click', () => { this.showFormulas(); });
-
-        // shapes for test initializing
-        /*
-        const A = this.createPoint(20, 40);
-        const B = this.createPoint(-60, 80);
-        const C = this.createPoint(-40, -20);
-        const AB = this.createSegment(A, B);
-        const BC = this.createSegment(B, C);
-        const AC = this.createSegment(A, C);
-        */
     }
 
     setAction(action: ActionEnum): void {
@@ -137,7 +129,6 @@ export class Board {
         });
 
         point.on('down', (event: any) => { this.handlePointClick(event, point); });
-        this.board.update();
         this.boardScheme.addPoint(point);
 
         return point;
@@ -149,24 +140,6 @@ export class Board {
             showInfobox: false,
             label: {visible: false,}
         });
-
-        return point;
-    }
-
-    private createGliderPoint(x: number, y: number, shape: any): any {
-        const point = this.board.create('glider', [x, y, shape], {
-            name: this.getNextCapitalLetter(), 
-            label: { fixed:false, fontSize: Sizes.TEXT_FONT },
-            size: Sizes.POINT_SIZE,
-            color: Colors.PRIMARY,
-            highlightFillColor: Colors.SECONDARY,
-            highlightStrokeColor: Colors.SECONDARY,
-            showInfobox: false,
-        });
-
-        point.on('down', (event: any) => { this.handlePointClick(event, point); });
-        this.board.update();
-        this.boardScheme.addGlider(point, shape);
 
         return point;
     }
@@ -183,13 +156,46 @@ export class Board {
         });
 
         point.on('down', (event: any) => { this.handlePointClick(event, point); });
-        this.board.update();
         this.boardScheme.addPoint(point);
 
         return point;
     }
 
-    private createSegment(point1: any, point2: any): any {
+    private createGliderPoint(x: number, y: number, shape: any): any {
+        const point = this.board.create('glider', [x, y, shape], {
+            name: this.getNextCapitalLetter(), 
+            label: { fixed:false, fontSize: Sizes.TEXT_FONT },
+            size: Sizes.POINT_SIZE,
+            color: Colors.PRIMARY,
+            highlightFillColor: Colors.SECONDARY,
+            highlightStrokeColor: Colors.SECONDARY,
+            showInfobox: false,
+        });
+
+        point.on('down', (event: any) => { this.handlePointClick(event, point); });
+        this.boardScheme.addGlider(point, shape);
+
+        return point;
+    }
+
+    private createSliderPoint(x: number, y: number, shape: any): any {
+        const point = this.board.create('glider', [x, y, shape], {
+            name: this.getNextCapitalLetter(), 
+            label: { fixed:false, fontSize: Sizes.TEXT_FONT },
+            size: Sizes.POINT_SIZE,
+            color: Colors.PRIMARY,
+            highlightFillColor: Colors.SECONDARY,
+            highlightStrokeColor: Colors.SECONDARY,
+            showInfobox: false,
+        });
+
+        point.on('down', (event: any) => { this.handlePointClick(event, point); });
+        this.boardScheme.addPoint(point);
+
+        return point;
+    }
+
+    private createSegment(point1: any, point2: any, noIntersectWithIds: string[] = []): any {
         const segment = this.board.create('line', [point1, point2], {
             straightFirst: false,
             straightLast: false,
@@ -200,6 +206,7 @@ export class Board {
 
         segment.on('down', (event: any) => { this.handleLineClick(event, segment); });
         this.boardScheme.addSegment(segment);
+        noIntersectWithIds.forEach((id) => this.noIntersect.push([segment.id, id]));
         this.createIntersectionPoints(segment);
         
         return segment;
@@ -217,7 +224,7 @@ export class Board {
         return segment;
     }
 
-    private createRay(point1: any, point2: any): any {
+    private createRay(point1: any, point2: any, noIntersectWithIds: string[] = []): any {
         const ray = this.board.create('line', [point1, point2], { 
             straightFirst: false,
             strokeWidth: Sizes.STROKE_WIDTH,
@@ -227,6 +234,7 @@ export class Board {
 
         ray.on('down', (event: any) => { this.handleLineClick(event, ray); });
         this.boardScheme.addRay(ray);
+        noIntersectWithIds.forEach((id) => this.noIntersect.push([ray.id, id]));
         this.createIntersectionPoints(ray);
 
         return ray;
@@ -243,7 +251,7 @@ export class Board {
         return ray;
     }
 
-    private createLine(point1: any, point2: any): any {
+    private createLine(point1: any, point2: any, noIntersectWithIds: string[] = []): any {
         const line = this.board.create('line', [point1, point2], {
             strokeWidth: Sizes.STROKE_WIDTH,
             color: Colors.PRIMARY,
@@ -252,6 +260,7 @@ export class Board {
 
         line.on('down', (event: any) => { this.handleLineClick(event, line); });
         this.boardScheme.addLine(line);
+        noIntersectWithIds.forEach((id) => this.noIntersect.push([line.id, id]));
         this.createIntersectionPoints(line);
 
         return line;
@@ -267,7 +276,7 @@ export class Board {
         return line;
     }
 
-    private createCircle(point1: any, point2: any): any {
+    private createCircle(point1: any, point2: any, noIntersectWithIds: string[] = []): any {
         const circle = this.board.create('circle', [point1, point2], { 
             fillColor: 'none',
             strokeWidth: Sizes.STROKE_WIDTH,
@@ -277,6 +286,7 @@ export class Board {
 
         circle.on('down', (event: any) => { this.handleCircleClick(event, circle); });
         this.boardScheme.addCircle(circle);
+        noIntersectWithIds.forEach((id) => this.noIntersect.push([circle.id, id]));
         this.createIntersectionPoints(circle);
 
         return circle;
@@ -321,6 +331,10 @@ export class Board {
                 continue;
             }
 
+            if(this.noIntersect.filter((pair) => pair.includes(obj.id) && pair.includes(shape.id)).length > 0) {
+                continue;
+            }
+
             if(this.promptingShapes.filter((promptingShape) => obj.id == promptingShape.id).length > 0) {
                 continue;
             }
@@ -337,10 +351,10 @@ export class Board {
             }
         }
 
-        this.board.update();
+        this.correctIntersectionPoints();
     }
 
-    private createPerpendicularLine(baseLine: any, basePoint: any): any {
+    private createPerpendicularLine(baseLine: any, basePoint: any, noIntersectWithIds: string[] = []): any {
         const line = this.board.create('perpendicular', [baseLine, basePoint], {
             strokeWidth: Sizes.STROKE_WIDTH,
             color: Colors.PRIMARY,
@@ -349,6 +363,7 @@ export class Board {
 
         line.on('down', (event: any) => { this.handleLineClick(event, line); });
         this.boardScheme.addPerpendicularity(line, baseLine, basePoint);
+        noIntersectWithIds.forEach((id) => this.noIntersect.push([line.id, id]));
         this.createIntersectionPoints(line);
 
         return line;
@@ -364,7 +379,7 @@ export class Board {
         return line;
     }
 
-    private createParallelLine(baseLine: any, basePoint: any): any {
+    private createParallelLine(baseLine: any, basePoint: any, noIntersectWithIds: string[] = []): any {
         const line = this.board.create('parallel', [baseLine, basePoint], {
             strokeWidth: Sizes.STROKE_WIDTH,
             color: Colors.PRIMARY,
@@ -373,6 +388,7 @@ export class Board {
 
         line.on('down', (event: any) => { this.handleLineClick(event, line); });
         this.boardScheme.addParallelism(line, baseLine, basePoint);
+        noIntersectWithIds.forEach((id) => this.noIntersect.push([line.id, id]));
         this.createIntersectionPoints(line);
 
         return line;
@@ -399,7 +415,7 @@ export class Board {
 
         var points: any[] = [];
         points.push(segmentEnds[0]);
-        for(var i = 1; i < partsNumber; i++) {
+        for(let i = 1; i < partsNumber; i++) {
             var x = xCoord(segmentEnds[0]) + i * dx;
             var y = yCoord(segmentEnds[0]) + i * dy;
             const point = this.createGliderPoint(x, y, line);
@@ -409,7 +425,7 @@ export class Board {
         points.push(segmentEnds[1]);
 
         var equalSegments: [any, any][] = [];
-        for(var i = 1; i < points.length; i++) { equalSegments.push([points[i - 1], points[i]]); }
+        for(let i = 1; i < points.length; i++) { equalSegments.push([points[i - 1], points[i]]); }
         this.markEqualSegments(equalSegments);
 
         return points;
@@ -458,7 +474,7 @@ export class Board {
         points.push(anglePoints[2]);
 
         var equalAngles: [any, any, any][] = [];
-        for(var i = 1; i < points.length; i++) { equalAngles.push([points[i - 1], anglePoints[1], points[i]]); }
+        for(let i = 1; i < points.length; i++) { equalAngles.push([points[i - 1], anglePoints[1], points[i]]); }
         this.markEqualAngles(equalAngles);
 
         return points;
@@ -514,7 +530,6 @@ export class Board {
 
         line.on('down', (event: any) => { this.handleLineClick(event, line); });
         this.boardScheme.addBisector(baseAnglePoints[0], baseAnglePoints[1], baseAnglePoints[2], line);
-        this.board.update();
         return line;
     }
 
@@ -535,7 +550,7 @@ export class Board {
         this.markEqualAngles([angle1Points, angle2Points]);
     }
 
-    private createTangentLine(circle: any, point: any): any {
+    private createTangentLine(circle: any, point: any, noIntersectWithIds: string[] = []): any {
         const line = this.board.create('tangent', [circle, point], {
             strokeWidth: Sizes.STROKE_WIDTH,
             color: Colors.PRIMARY,
@@ -544,6 +559,7 @@ export class Board {
 
         line.on('down', (event: any) => { this.handleLineClick(event, line); });
         //this.boardScheme.addTangentLine(line);
+        noIntersectWithIds.forEach((id) => this.noIntersect.push([line.id, id]));
         this.createIntersectionPoints(line);
 
         return line;
@@ -562,7 +578,6 @@ export class Board {
         });
 
         const tangentCircle = this.createCircle(circleCenter, intersectionPoint);
-        this.board.update();
 
         return tangentCircle;
     }
@@ -574,47 +589,146 @@ export class Board {
         });
 
         const tangentCircle = this.createCircle(circleCenter, intersectionPoint);
-        this.board.update();
 
         return tangentCircle;
     }
 
-    private createdCircumcircle(polygonPoints: any[]): any {
-        const circumCenterCoords = JXG.Math.Geometry.circumcenter(...polygonPoints).usrCoords;
-        //const circumCenterCoords2 = JXG.Math.Geometry.incenter(...polygonPoints, this.board).usrCoords;
-        const circumCenter = this.createPoint(circumCenterCoords[1], circumCenterCoords[2]);
+    private createCircumcircle(polygonPoints: any[]): any {
+        // it works only for triangles
+        /*
+        const circle = this.board.create('circumcircle', [...polygonPoints.slice(0, 3)], { 
+            fillColor: 'none',
+            strokeWidth: Sizes.STROKE_WIDTH,
+            strokeColor: Colors.PRIMARY,
+            highlightStrokeColor: Colors.SECONDARY
+        });
 
-        //circle.on('down', (event: any) => { this.handleCircleClick(event, circle); });
-        //this.boardScheme.addCircle(circle);
-        //this.createIntersectionPoints(circle);
+        circle.on('down', (event: any) => { this.handleCircleClick(event, circle); });
+        this.boardScheme.addCircle(circle);
+        this.createIntersectionPoints(circle);
 
+        return circle;
+        */
+
+        // it works for triangles and regular polygons created with built-in functions
+        // it does not verify whether it can be done
+        const center = this.createPointFunCoord(function() {
+            const centerCoords = JXG.Math.Geometry.circumcenter(...polygonPoints.slice(0, 3));
+            return centerCoords.usrCoords;
+        });
+
+        const circle = this.createCircle(center, polygonPoints[0]);
+
+        return circle;
     }
 
-    private createdIncircle(polygonPoints: any[]): any {
-        //const bisector1SP = JXG.Math.Geometry.angleBisector(trianglePoints[0], trianglePoints[1], trianglePoints[2]);
-        //const bisector2SP = JXG.Math.Geometry.angleBisector(trianglePoints[1], trianglePoints[2], trianglePoints[0]);
-        //const xCoords = [100, 150];
-        //const yCoords = [200, 130];
-        //const bisector1 = JXG.Line(this.board, xCoords, yCoords);
-       // const bisector2 = JXG.Line(this.board, trianglePoints[2], bisector2SecondPoint);
-        //const inCenterCoords = JXG.Math.Geometry.meetLineLine(bisector1, bisector2, 0);
-        //const inCenter = this.createPoint(inCenterCoords[1], inCenterCoords[2]);
+    private createIncircle(polygonPoints: any[]): any {
+        // it works only for triangles
+        /*
+        const circle = this.board.create('incircle', [...polygonPoints.slice(0, 3)], { 
+            fillColor: 'none',
+            strokeWidth: Sizes.STROKE_WIDTH,
+            strokeColor: Colors.PRIMARY,
+            highlightStrokeColor: Colors.SECONDARY
+        });
 
-        //circle.on('down', (event: any) => { this.handleCircleClick(event, circle); });
-        //this.boardScheme.addCircle(circle);
-        //this.createIntersectionPoints(circle);
+        circle.on('down', (event: any) => { this.handleCircleClick(event, circle); });
+        this.boardScheme.addCircle(circle);
+        this.createIntersectionPoints(circle);
 
+        return circle;
+        */
+
+        // it works for triangles and regular polygons created with built-in functions
+        // it does not verify whether it can be done
+        const center = this.createPointFunCoord(function() {
+            const bisector1Point = JXG.Math.Geometry.angleBisector(polygonPoints[0], polygonPoints[1], polygonPoints[2]);
+            const bisector2Point = JXG.Math.Geometry.angleBisector(polygonPoints[1], polygonPoints[2], polygonPoints[3 % polygonPoints.length]);
+
+            const centerCoords = JXG.Math.Geometry.meetSegmentSegment(
+                polygonPoints[1].coords.usrCoords,
+                bisector1Point.usrCoords,
+                polygonPoints[2].coords.usrCoords,
+                bisector2Point.usrCoords
+            );
+                
+            return centerCoords[0];
+        });
+        
+        var pointsOnSides: any[] = [];
+        var noIntersectWith: string[] = [];
+
+        const getSegment = (end1: any, end2: any): any => { 
+            const sideSearch = this.boardScheme.getLineByPoints(end1.id, end2.id)
+            if(sideSearch[0]) { return this.board.objects[sideSearch[1]]; }
+            else { return this.createSegment(end1, end2); }
+        }
+
+        for(let i = 0; i < polygonPoints.length; i++) {
+            pointsOnSides.push(this.createPointFunCoord(function() {
+                const side = getSegment(polygonPoints[i], polygonPoints[(i+1)%polygonPoints.length]);
+                noIntersectWith.push(side.id);
+                const pointProjection = JXG.Math.Geometry.projectPointToLine(center, side);
+                return pointProjection.usrCoords;
+            }));        
+        }
+
+        const circle = this.createCircle(center, pointsOnSides[0], noIntersectWith);
+
+        return circle;
     }
 
-    private createEscribedCircle(trianglePoints: [any, any, any]): any {
-        return null;
+    private createEscribedCircle(trianglePoints: [any, any, any]): any {    
+        const getBoardInstance = (): any => { return this; }
+        
+        const center = this.createPointFunCoord(function() {
+            const rotatedPoint1 = {coords:JXG.Math.Geometry.rotation(trianglePoints[1], trianglePoints[0], Math.PI)};
+            const rotatedPoint2 = {coords:JXG.Math.Geometry.rotation(trianglePoints[2], trianglePoints[0], Math.PI)};
+
+            const bisector1Point = JXG.Math.Geometry.angleBisector(rotatedPoint1, trianglePoints[1], trianglePoints[2], getBoardInstance().board);
+            const bisector2Point = JXG.Math.Geometry.angleBisector(rotatedPoint2, trianglePoints[2], trianglePoints[1], getBoardInstance().board);
+
+            const centerCoords = JXG.Math.Geometry.meetSegmentSegment(
+                trianglePoints[1].coords.usrCoords,
+                bisector1Point.usrCoords,
+                trianglePoints[2].coords.usrCoords,
+                bisector2Point.usrCoords
+            );
+            
+            return centerCoords[0];
+        });
+
+        var side: any;
+        const segmentSearch: [boolean, string] = this.boardScheme.getLineByPoints(trianglePoints[1].id, trianglePoints[2].id);
+        if(segmentSearch[0]) { side = this.board.objects[segmentSearch[1]]; }
+        else { side = this.createSegment(trianglePoints[1], trianglePoints[2]); }
+
+        const ray1 = this.createRay(trianglePoints[0], trianglePoints[1]);
+        const ray2 = this.createRay(trianglePoints[0], trianglePoints[2]);
+
+        const ray1SpotPoint = this.createPointFunCoord(function() {
+            var projection = JXG.Math.Geometry.projectPointToLine(center, ray1);
+            return projection.usrCoords
+        });
+
+        const ray2SpotPoint = this.createPointFunCoord(function() {
+            var projection = JXG.Math.Geometry.projectPointToLine(center, ray2);
+            return projection.usrCoords
+        });
+
+        const sideSpotPoint = this.createPointFunCoord(function() {
+            var projection = JXG.Math.Geometry.projectPointToLine(center, side);
+            return projection.usrCoords
+        });
+
+        const circle = this.createCircle(center, sideSpotPoint, [side.id, ray1.id, ray2.id]);
+
+        return circle;
     }
 
     private createMedian(vertexPoint: any, basePoints: [any, any]): any {
         const pointOnBase = this.divideSegment(basePoints, 2);
         const median = this.createSegment(vertexPoint, pointOnBase[1]);
-
-        this.board.update();
 
         return median;
     }
@@ -632,8 +746,6 @@ export class Board {
 
         const altitude = this.createSegment(vertexPoint, spotPoint);
 
-        this.board.update();
-
         return altitude;
     }
 
@@ -642,9 +754,195 @@ export class Board {
         const pointOn2Side = this.divideSegment(side2Points, 2);
         const midSegment = this.createSegment(pointOn1Side[1], pointOn2Side[1]);
 
-        this.board.update();
-
         return midSegment;
+    }
+
+    private cretaeTrianglePoints(vertex1: any, vertex2: any): [any, any, any] {
+        // it creates isosceles triangle
+
+        const guideLine = this.board.create('curve', [
+            function(t: number) { 
+                return t; 
+            }, 
+            function(t: number) { 
+                const xMid = (xCoord(vertex1) + xCoord(vertex2)) / 2;
+                const yMid = (yCoord(vertex1) + yCoord(vertex2)) / 2;
+                
+                const epsilon = 0.0000001;
+                const dx: number = xCoord(vertex2) - xCoord(vertex1);
+                const dy: number = yCoord(vertex2) - yCoord(vertex1);
+
+                if(Math.abs(dx) < epsilon) { Math.sign(dx) * epsilon; }
+                const a = dy / dx;
+                const aPerpendicular = -1 / a;
+                const bPerpendicular = yMid - aPerpendicular * xMid;
+
+                return aPerpendicular * t + bPerpendicular; 
+            }
+        ], 
+        {
+            visible: false
+        });
+        
+        const vertex3 = this.createSliderPoint(0, 0, guideLine);
+
+        return [vertex1, vertex2, vertex3];
+    }
+
+    private createSquarePoints(vertex1: any, vertex2: any): [any, any, any, any] {
+        const vertex3 = this.createPointFunCoord(function() {
+            const dx = xCoord(vertex1) - xCoord(vertex2);
+            const dy = yCoord(vertex1) - yCoord(vertex2);
+            var newUsrCoords: [number, number, number] = [...vertex2.coords.usrCoords] as [number, number, number];
+            newUsrCoords[1] += dy;
+            newUsrCoords[2] -= dx;
+
+            return newUsrCoords;
+        });
+
+        const vertex4 = this.createPointFunCoord(function() {
+            const dx = xCoord(vertex1) - xCoord(vertex2);
+            const dy = yCoord(vertex1) - yCoord(vertex2);
+            var newUsrCoords: [number, number, number] = [...vertex1.coords.usrCoords] as [number, number, number];
+            newUsrCoords[1] += dy;
+            newUsrCoords[2] -= dx;
+
+            return newUsrCoords;
+        });
+
+        return [vertex1, vertex2, vertex3, vertex4];
+    }
+
+    private createRectaglePoints(vertex1: any, vertex2: any): [any, any, any, any] {
+        const guideLine = this.board.create('curve', [
+            function(t: number) { 
+                const dy = yCoord(vertex1) - yCoord(vertex2);
+                return xCoord(vertex1) + t * dy; 
+            }, 
+            function(t: number) { 
+                const dx = xCoord(vertex1) - xCoord(vertex2);
+                return yCoord(vertex1) - t * dx; 
+            }
+        ], 
+        {
+            visible: false
+        });
+
+        const dx = xCoord(vertex1) - xCoord(vertex2);
+        const dy = yCoord(vertex1) - yCoord(vertex2);
+        const vertex3 = this.createSliderPoint(xCoord(vertex1) + dy, yCoord(vertex1) - dx, guideLine);
+
+        const vertex4 = this.createPointFunCoord(function() {
+            const dx = xCoord(vertex1) - xCoord(vertex3);
+            const dy = yCoord(vertex1) - yCoord(vertex3);
+            var newUsrCoords: [number, number, number] = [...vertex2.coords.usrCoords] as [number, number, number];
+            newUsrCoords[1] -= dx;
+            newUsrCoords[2] -= dy;
+
+            return newUsrCoords;
+        }); 
+
+        return [vertex1, vertex2, vertex3, vertex4];
+    }
+
+    private createPolygonPoints(vertex1: any, vertex2: any, n: number): any[] {
+        var vertices: any[] = [];
+        vertices.push(vertex1);
+        vertices.push(vertex2);
+
+        const dalfa = (n-2) * Math.PI / n;
+        for(let i = 2; i < n; i++) {
+            vertices.push(this.createPointFunCoord(function() {
+                const newPointCoords = JXG.Math.Geometry.rotation(vertices[i-1], vertices[i-2], dalfa);
+                return newPointCoords.usrCoords;
+            }));
+        }
+
+        return vertices;
+    }
+
+    private createPolygonPointsRequestData(vertex1: any, vertex2: any): void {
+        this.requestDataFromUser(RequestEnum.POLYGON_SIDES_NUMBER, (data) => {
+            const castedData = data as {sides: number};
+            this.createPolygonPoints(vertex1, vertex2, castedData.sides);
+        });
+    }
+
+    private createParallelogramPoints(vertex1: any, vertex2: any, vertex3: any): [any, any, any, any] {
+        const vertex4 = this.createPointFunCoord(function() {
+            const dx = xCoord(vertex3) - xCoord(vertex2);
+            const dy = yCoord(vertex3) - yCoord(vertex2);
+            var newUsrCoords: [number, number, number] = [...vertex1.coords.usrCoords] as [number, number, number];
+            newUsrCoords[1] += dx;
+            newUsrCoords[2] += dy;
+
+            return newUsrCoords;
+        });
+
+        return [vertex1, vertex2, vertex3, vertex4];
+    }
+
+    private createKitePoints(vertex1: any, vertex2: any, vertex3: any): [any, any, any, any] {
+        const vertex4 = this.createPointFunCoord(function() {
+            const diagonalCross = JXG.Math.Geometry.projectCoordsToSegment(vertex2.coords.usrCoords, vertex1.coords.usrCoords, vertex3.coords.usrCoords);
+            const dx = xCoord(vertex2) - diagonalCross[0][1];
+            const dy = yCoord(vertex2) - diagonalCross[0][2];
+           
+            var newUsrCoords: [number, number, number] = [...vertex2.coords.usrCoords] as [number, number, number];
+            newUsrCoords[1] -= 2 * dx;
+            newUsrCoords[2] -= 2 * dy;
+
+            return newUsrCoords;
+        });
+
+        return [vertex1, vertex2, vertex3, vertex4];
+    }
+
+    private createRhombusPoints(vertex1: any, vertex2: any): [any, any, any, any] {
+        const guideLine = this.board.create('curve', [
+            function(t: number) { 
+                const r = distance(vertex1, vertex2);
+                return xCoord(vertex2) + r * Math.cos(t); 
+            }, 
+            function(t: number) { 
+                const r = distance(vertex1, vertex2);
+                return yCoord(vertex2) + r * Math.sin(t); 
+            }
+        ], 
+        {
+            visible: false
+        });
+
+        const vertex3 = this.createSliderPoint(0, 0, guideLine);
+
+        const vertex4 = this.createPointFunCoord(function() {
+            const dx = xCoord(vertex3) - xCoord(vertex2);
+            const dy = yCoord(vertex3) - yCoord(vertex2);
+            var newUsrCoords: [number, number, number] = [...vertex1.coords.usrCoords] as [number, number, number];
+            newUsrCoords[1] += dx;
+            newUsrCoords[2] += dy;
+
+            return newUsrCoords;
+        });
+
+        return [vertex1, vertex2, vertex3, vertex4];
+    }
+
+    private createTrapezoidPoints(vertex1: any, vertex2: any, vertex3: any): [any, any, any, any] {
+        // it creates isosceles trapezoid
+        // top base includes vertex1 and vertex2
+
+        const vertex4 = this.createPointFunCoord(function() {
+            const dx = xCoord(vertex3) - xCoord(vertex2);
+            const dy = yCoord(vertex3) - yCoord(vertex2);
+            var newUsrCoords: [number, number, number] = [...vertex1.coords.usrCoords] as [number, number, number];
+            newUsrCoords[1] -= dx;
+            newUsrCoords[2] += dy;
+
+            return newUsrCoords;
+        });
+
+        return [vertex1, vertex2, vertex3, vertex4];
     }
 
     private setSegmentLength(segmentEnds: [any, any]): void {
@@ -879,7 +1177,8 @@ export class Board {
             case ActionEnum.CREATE_RHOMBUS:
             case ActionEnum.CREATE_TRAPEZOID:
                 if(Options.ALLOW_CREATING_POINTS_FOR_POLYGONS_CREATING) {
-                    
+                    if(canBeCreated) { this.shapesAccumulator.push(this.createPoint(x, y)); }
+                    else { this.shapesAccumulator.push(duplicationPoint); }
                 }
                 break;            
             default:
@@ -948,7 +1247,7 @@ export class Board {
             case ActionEnum.CREATE_KITE:
             case ActionEnum.CREATE_RHOMBUS:
             case ActionEnum.CREATE_TRAPEZOID:
-                
+                this.shapesAccumulator.push(point);
                 break;            
             default:
                 return;
@@ -1041,7 +1340,8 @@ export class Board {
             case ActionEnum.CREATE_RHOMBUS:
             case ActionEnum.CREATE_TRAPEZOID:
                 if(Options.ALLOW_CREATING_POINTS_FOR_POLYGONS_CREATING) {
-                    
+                    if(canBeCreated) { this.shapesAccumulator.push(this.createGliderPoint(x, y, line)); }
+                    else { this.shapesAccumulator.push(duplicationPoint); }
                 }
                 break;            
             default:
@@ -1147,7 +1447,8 @@ export class Board {
             case ActionEnum.CREATE_RHOMBUS:
             case ActionEnum.CREATE_TRAPEZOID:
                 if(Options.ALLOW_CREATING_POINTS_FOR_POLYGONS_CREATING) {
-
+                    if(canBeCreated) { this.shapesAccumulator.push(this.createGliderPoint(x, y, circle)); }
+                    else { this.shapesAccumulator.push(duplicationPoint); }
                 }
                 break;            
             default:
@@ -1252,13 +1553,13 @@ export class Board {
                 break; 
             case ActionEnum.CREATE_CIRCUMCIRCLE:
                 if(this.pointsRecur(this.shapesAccumulator)) { 
-                    this.createdCircumcircle(this.shapesAccumulator.slice(0, this.shapesAccumulator.length - 1)); 
+                    this.createCircumcircle(this.shapesAccumulator.slice(0, this.shapesAccumulator.length - 1)); 
                     this.shapesAccumulator = [];
                 }
                 break;
             case ActionEnum.CREATE_INCIRCLE:
                 if(this.pointsRecur(this.shapesAccumulator)) { 
-                    this.createdIncircle(this.shapesAccumulator.slice(0, this.shapesAccumulator.length - 1));  
+                    this.createIncircle(this.shapesAccumulator.slice(0, this.shapesAccumulator.length - 1));  
                     this.shapesAccumulator = [];
                 }
                 break;
@@ -1313,20 +1614,52 @@ export class Board {
                 }
                 break;
             case ActionEnum.CREATE_TRIANGLE:
+                if(this.shapesAccumulator.length == 2) {
+                    this.cretaeTrianglePoints(this.shapesAccumulator[0], this.shapesAccumulator[1]);
+                    this.shapesAccumulator = [];
+                }
                 break;
             case ActionEnum.CREATE_SQUARE:
+                if(this.shapesAccumulator.length == 2) {
+                    this.createSquarePoints(this.shapesAccumulator[0], this.shapesAccumulator[1]);
+                    this.shapesAccumulator = [];
+                }
                 break;
             case ActionEnum.CREATE_RECTANGLE:
+                if(this.shapesAccumulator.length == 2) {
+                    this.createRectaglePoints(this.shapesAccumulator[0], this.shapesAccumulator[1]);
+                    this.shapesAccumulator = [];
+                }
                 break;
             case ActionEnum.CREATE_REGULAR_POLYGON:
+                if(this.shapesAccumulator.length == 2) {
+                    this.createPolygonPointsRequestData(this.shapesAccumulator[0], this.shapesAccumulator[1]);
+                    this.shapesAccumulator = [];
+                }
                 break;
             case ActionEnum.CREATE_PARALLELOGRAM:
+                if(this.shapesAccumulator.length == 3) {
+                    this.createParallelogramPoints(this.shapesAccumulator[0], this.shapesAccumulator[1], this.shapesAccumulator[2]);
+                    this.shapesAccumulator = [];
+                }
                 break;
             case ActionEnum.CREATE_KITE:
+                if(this.shapesAccumulator.length == 3) {
+                    this.createKitePoints(this.shapesAccumulator[0], this.shapesAccumulator[1], this.shapesAccumulator[2]);
+                    this.shapesAccumulator = [];
+                }
                 break;
             case ActionEnum.CREATE_RHOMBUS:
+                if(this.shapesAccumulator.length == 2) {
+                    this.createRhombusPoints(this.shapesAccumulator[0], this.shapesAccumulator[1]);
+                    this.shapesAccumulator = [];
+                }
                 break;
             case ActionEnum.CREATE_TRAPEZOID:
+                if(this.shapesAccumulator.length == 3) {
+                    this.createTrapezoidPoints(this.shapesAccumulator[0], this.shapesAccumulator[1], this.shapesAccumulator[2]);
+                    this.shapesAccumulator = [];
+                }
                 break;
         }
 
@@ -1400,5 +1733,7 @@ export class Board {
 
             this.boardScheme.setIntersectionState(ip, newOpacity === 1, inactiveReasons);
         }
+
+        this.board.update();
     }
 };

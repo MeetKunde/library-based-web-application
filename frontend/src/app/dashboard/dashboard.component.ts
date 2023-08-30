@@ -16,6 +16,7 @@ import { SetAngleMeasureDialogComponent } from './dialogs/setAngleMeasure.compon
 import { AngleIsConvexDialogComponent } from './dialogs/angleIsConvexDialog.component';
 import { SetPerimeterDialogComponent } from './dialogs/setPerimeter.component';
 import { SetAreaDialogComponent } from './dialogs/setArea.component';
+import { EnterPolygonSidesNumberDialogComponent } from './dialogs/enterPolygonSidesNumberDialog.component';
 
 
 @Component({
@@ -36,18 +37,18 @@ export class DashboardComponent {
     {name: 'parallelism', tooltip: 'Create Parallel Line', imagePath: '../../assets/button-images/ParallelismIcon.svg', actionToDo: () => { this.board?.changeAction(ActionEnum.CREATE_PARALLEL_LINE); this.openInstructionSnackBar(); }, highlightButton: () => { return this.board?.getAction() == ActionEnum.CREATE_PARALLEL_LINE; }},
     {name: 'mid-perpendicular', tooltip: 'Create Mid-Perpendicular', imagePath: '../../assets/button-images/MidPerpendicularIcon.svg', actionToDo: () => { this.board?.changeAction(ActionEnum.CREATE_MID_PERPENDICULAR); this.openInstructionSnackBar(); }, highlightButton: () => { return this.board?.getAction() == ActionEnum.CREATE_MID_PERPENDICULAR; }},
     {name: 'bisector', tooltip: 'Create Bisector', imagePath: '../../assets/button-images/BisectorIcon.svg', actionToDo: () => { this.board?.changeAction(ActionEnum.CREATE_BISECTOR); this.openInstructionSnackBar(); }, highlightButton: () => { return this.board?.getAction() == ActionEnum.CREATE_BISECTOR; }},
-    {name: 'incircle', tooltip: 'Create Incircle', imagePath: '../../assets/button-images/IncircleIcon.svg', actionToDo: () => { this.board?.changeAction(ActionEnum.CREATE_INCIRCLE); }, highlightButton: () => { return this.board?.getAction() == ActionEnum.CREATE_INCIRCLE; }},
-    {name: 'circumcircle', tooltip: 'Create Circumcircle', imagePath: '../../assets/button-images/CircumcircleIcon.svg', actionToDo: () => { this.board?.changeAction(ActionEnum.CREATE_CIRCUMCIRCLE); }, highlightButton: () => { return this.board?.getAction() == ActionEnum.CREATE_CIRCUMCIRCLE; }},
-    {name: 'escribedCircle', tooltip: 'Create Escribed Circle', imagePath: '../../assets/button-images/EscribedCircleIcon.svg', actionToDo: () => { this.board?.changeAction(ActionEnum.CREATE_ESCRIBED_CIRCLE); }, highlightButton: () => { return this.board?.getAction() == ActionEnum.CREATE_ESCRIBED_CIRCLE; }},
+    {name: 'incircle', tooltip: 'Create Incircle', imagePath: '../../assets/button-images/IncircleIcon.svg', actionToDo: () => { this.board?.changeAction(ActionEnum.CREATE_INCIRCLE); this.openInstructionSnackBar(); }, highlightButton: () => { return this.board?.getAction() == ActionEnum.CREATE_INCIRCLE; }},
+    {name: 'circumcircle', tooltip: 'Create Circumcircle', imagePath: '../../assets/button-images/CircumcircleIcon.svg', actionToDo: () => { this.board?.changeAction(ActionEnum.CREATE_CIRCUMCIRCLE); this.openInstructionSnackBar(); }, highlightButton: () => { return this.board?.getAction() == ActionEnum.CREATE_CIRCUMCIRCLE; }},
+    {name: 'escribedCircle', tooltip: 'Create Escribed Circle', imagePath: '../../assets/button-images/EscribedCircleIcon.svg', actionToDo: () => { this.board?.changeAction(ActionEnum.CREATE_ESCRIBED_CIRCLE); this.openInstructionSnackBar(); }, highlightButton: () => { return this.board?.getAction() == ActionEnum.CREATE_ESCRIBED_CIRCLE; }},
     {name: 'divideSegment', tooltip: 'Divide Segment', imagePath: '../../assets/button-images/DivideSegmentIcon.svg', actionToDo: () => { this.board?.changeAction(ActionEnum.DIVIDE_SEGMENT); this.openInstructionSnackBar(); }, highlightButton: () => { return this.board?.getAction() == ActionEnum.DIVIDE_SEGMENT; }},
     {name: 'divideAngle', tooltip: 'Divide Angle', imagePath: '../../assets/button-images/DivideAngleIcon.svg', actionToDo: () => { this.board?.changeAction(ActionEnum.DIVIDE_ANGLE); this.openInstructionSnackBar(); }, highlightButton: () => { return this.board?.getAction() == ActionEnum.DIVIDE_ANGLE; }},
     {name: 'equalSegments', tooltip: 'Set Equal Segments', imagePath: '../../assets/button-images/EqualLengthsIcon.svg', actionToDo: () => { this.board?.changeAction(ActionEnum.SET_EQUAL_SEGMENTS); this.openInstructionSnackBar(); }, highlightButton: () => { return this.board?.getAction() == ActionEnum.SET_EQUAL_SEGMENTS; }},
     {name: 'equalAngles', tooltip: 'Set Equal Angles', imagePath: '../../assets/button-images/EqualAnglesIcon.svg', actionToDo: () => { this.board?.changeAction(ActionEnum.SET_EQUAL_ANGLES); this.openInstructionSnackBar(); }, highlightButton: () => { return this.board?.getAction() == ActionEnum.SET_EQUAL_ANGLES; }},
-    {name: 'tangentLine', tooltip: 'Create Tangent Line', imagePath: '../../assets/button-images/TangentCircleToLineIcon.svg', actionToDo: () => { this.board?.changeAction(ActionEnum.CREATE_TANGENT_LINE); }, highlightButton: () => { return this.board?.getAction() == ActionEnum.CREATE_TANGENT_LINE; }},
-    {name: 'tangentCircle', tooltip: 'Create Tangent Circle', imagePath: '../../assets/button-images/TangentCircleToCircleIcon.svg', actionToDo: () => { this.board?.changeAction(ActionEnum.CREATE_TANGENT_CIRCLE); }, highlightButton: () => { return this.board?.getAction() == ActionEnum.CREATE_TANGENT_CIRCLE; }},
-    {name: 'median', tooltip: 'Create Median', imagePath: '../../assets/button-images/MedianIcon.svg', actionToDo: () => { this.board?.changeAction(ActionEnum.CREATE_MEDIAN); }, highlightButton: () => { return this.board?.getAction() == ActionEnum.CREATE_MEDIAN; }},
-    {name: 'altitude', tooltip: 'Create Altitude', imagePath: '../../assets/button-images/AltitudeIcon.svg', actionToDo: () => { this.board?.changeAction(ActionEnum.CREATE_ALTITUDE); }, highlightButton: () => { return this.board?.getAction() == ActionEnum.CREATE_ALTITUDE; }},
-    {name: 'mid-segment', tooltip: 'Create Mid-Segment', imagePath: '../../assets/button-images/MidSegmentIcon.svg', actionToDo: () => { this.board?.changeAction(ActionEnum.CREATE_MID_SEGMENT); }, highlightButton: () => { return this.board?.getAction() == ActionEnum.CREATE_MID_SEGMENT; }},
+    {name: 'tangentLine', tooltip: 'Create Tangent Line', imagePath: '../../assets/button-images/TangentCircleToLineIcon.svg', actionToDo: () => { this.board?.changeAction(ActionEnum.CREATE_TANGENT_LINE); this.openInstructionSnackBar(); }, highlightButton: () => { return this.board?.getAction() == ActionEnum.CREATE_TANGENT_LINE; }},
+    {name: 'tangentCircle', tooltip: 'Create Tangent Circle', imagePath: '../../assets/button-images/TangentCircleToCircleIcon.svg', actionToDo: () => { this.board?.changeAction(ActionEnum.CREATE_TANGENT_CIRCLE); this.openInstructionSnackBar(); }, highlightButton: () => { return this.board?.getAction() == ActionEnum.CREATE_TANGENT_CIRCLE; }},
+    {name: 'median', tooltip: 'Create Median', imagePath: '../../assets/button-images/MedianIcon.svg', actionToDo: () => { this.board?.changeAction(ActionEnum.CREATE_MEDIAN); this.openInstructionSnackBar(); }, highlightButton: () => { return this.board?.getAction() == ActionEnum.CREATE_MEDIAN; }},
+    {name: 'altitude', tooltip: 'Create Altitude', imagePath: '../../assets/button-images/AltitudeIcon.svg', actionToDo: () => { this.board?.changeAction(ActionEnum.CREATE_ALTITUDE); this.openInstructionSnackBar(); }, highlightButton: () => { return this.board?.getAction() == ActionEnum.CREATE_ALTITUDE; }},
+    {name: 'mid-segment', tooltip: 'Create Mid-Segment', imagePath: '../../assets/button-images/MidSegmentIcon.svg', actionToDo: () => { this.board?.changeAction(ActionEnum.CREATE_MID_SEGMENT); this.openInstructionSnackBar(); }, highlightButton: () => { return this.board?.getAction() == ActionEnum.CREATE_MID_SEGMENT; }},
     {name: 'setLength', tooltip: 'Set Segment Length', imagePath: '../../assets/button-images/SegmentLengthIcon.svg', actionToDo: () => { this.board?.changeAction(ActionEnum.SET_SEGMENT_LENGHT); this.openInstructionSnackBar(); }, highlightButton: () => { return this.board?.getAction() == ActionEnum.SET_SEGMENT_LENGHT; }},
     {name: 'setAngle', tooltip: 'Set Angle Measure', imagePath: '../../assets/button-images/AngleMeasureIcon.svg', actionToDo: () => { this.board?.changeAction(ActionEnum.SET_ANGLE_MEASURE); this.openInstructionSnackBar(); }, highlightButton: () => { return this.board?.getAction() == ActionEnum.SET_ANGLE_MEASURE; }},
     {name: 'setEquation', tooltip: 'Enter Equation', imagePath: '../../assets/button-images/EquationIcon.svg', actionToDo: () => { this.board?.changeAction(ActionEnum.ENTER_FORMULA); /*this.openInstructionSnackBar();*/ }, highlightButton: () => { return false; }},
@@ -73,7 +74,7 @@ export class DashboardComponent {
   private boardId = 'jxgbox';
   private bounds: [number, number, number, number] = [-100, 100, 100, -100];
   private maxBounds: [number, number, number, number] = [-400, 400, 300, -300];
-  private showAxis = true;
+  private showAxis = false;
   private keepAspectRatio = true;
 
   constructor(
@@ -189,6 +190,13 @@ export class DashboardComponent {
         this.openRequestDataDialog(SetAreaDialogComponent, (data: { stringValue: string, booleanValue: boolean }) => {
           var area: string = data.stringValue;
           if(area.length > 0) { callback({ area: area }); }
+          else { this.openErrorSnackBar('Incorrect data have been entered'); }
+        });
+        break;
+      case RequestEnum.POLYGON_SIDES_NUMBER:
+        this.openRequestDataDialog(EnterPolygonSidesNumberDialogComponent, (data: { stringValue: string, booleanValue: boolean }) => {
+          var sides: number = parseInt(data.stringValue);
+          if(Number.isInteger(sides) && sides > 2) { callback({ sides: sides }); }
           else { this.openErrorSnackBar('Incorrect data have been entered'); }
         });
         break;

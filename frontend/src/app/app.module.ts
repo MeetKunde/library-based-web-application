@@ -32,6 +32,7 @@ import { SetAngleMeasureDialogComponent } from './dashboard/dialogs/setAngleMeas
 import { AngleIsConvexDialogComponent } from './dashboard/dialogs/angleIsConvexDialog.component';
 import { SetPerimeterDialogComponent } from './dashboard/dialogs/setPerimeter.component';
 import { SetAreaDialogComponent } from './dashboard/dialogs/setArea.component';
+import { EnterPolygonSidesNumberDialogComponent } from './dashboard/dialogs/enterPolygonSidesNumberDialog.component';
 
 
 
@@ -49,6 +50,7 @@ import { SetAreaDialogComponent } from './dashboard/dialogs/setArea.component';
     AngleIsConvexDialogComponent,
     SetPerimeterDialogComponent,
     SetAreaDialogComponent,
+    EnterPolygonSidesNumberDialogComponent,
   ],
   imports: [
     BrowserModule,
