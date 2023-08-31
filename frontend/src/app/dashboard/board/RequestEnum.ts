@@ -1,3 +1,5 @@
+import { PolygonType } from "./PolygonType";
+
 export enum RequestEnum {
     FORMULA,
     LENGTH,
@@ -8,6 +10,8 @@ export enum RequestEnum {
     PERIMETER,
     AREA,
     POLYGON_SIDES_NUMBER,
+    TRIANGLE_TYPE,
+    TRAPEZOID_TYPE
 };
 
 export type AnswearType = 
@@ -19,4 +23,6 @@ export type AnswearType =
     { partsNumber: number, angleIsConvex: boolean } |
     { perimeter: string } |
     { area: string } |
-    { sides: number }
+    { sides: number } |
+    { triangleType: PolygonType.SCALENE_ACUTE_TRIANGLE | PolygonType.SCALENE_RIGHT_TRIANGLE | PolygonType.EQUILATERAL_TRIANGLE | PolygonType.ISOSCELES_ACUTE_TRIANGLE | PolygonType.ISOSCELES_RIGHT_TRIANGLE | PolygonType.OBTUSE_SCALENE_TRIANGLE | PolygonType.OBTUSE_ISOSCELES_TRIANGLE } |
+    { trapezoidType: PolygonType.SCALENE_TRAPEZOID | PolygonType.ISOSCELES_TRAPEZOID | PolygonType.RIGHT_TRAPEZOID }

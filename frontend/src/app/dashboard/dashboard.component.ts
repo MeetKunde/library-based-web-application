@@ -17,6 +17,9 @@ import { AngleIsConvexDialogComponent } from './dialogs/angleIsConvexDialog.comp
 import { SetPerimeterDialogComponent } from './dialogs/setPerimeter.component';
 import { SetAreaDialogComponent } from './dialogs/setArea.component';
 import { EnterPolygonSidesNumberDialogComponent } from './dialogs/enterPolygonSidesNumberDialog.component';
+import { ProcessExerciseService } from '../service/process-exercise.service';
+import { SelectTriangleTypeDialogComponent } from './dialogs/selectTriangleTypeDialog.component';
+import { SelectTrapezoidTypeDialogComponent } from './dialogs/selectTrapezoidTypeDialog.component';
 
 
 @Component({
@@ -62,7 +65,7 @@ export class DashboardComponent {
     {name: 'kite', tooltip: 'Create Kite', imagePath: '../../assets/button-images/KiteIcon.svg', actionToDo: () => { this.board?.changeAction(ActionEnum.CREATE_KITE); this.openInstructionSnackBar(); }, highlightButton: () => { return this.board?.getAction() == ActionEnum.CREATE_KITE; }},
     {name: 'rhombus', tooltip: 'Create Rhombus', imagePath: '../../assets/button-images/RhombusIcon.svg', actionToDo: () => { this.board?.changeAction(ActionEnum.CREATE_RHOMBUS); this.openInstructionSnackBar(); }, highlightButton: () => { return this.board?.getAction() == ActionEnum.CREATE_RHOMBUS; }},
     {name: 'trapezoid', tooltip: 'Create Trapezoid', imagePath: '../../assets/button-images/TrapezoidIcon.svg', actionToDo: ()=> { this.board?.changeAction(ActionEnum.CREATE_TRAPEZOID); this.openInstructionSnackBar(); }, highlightButton: () => { return this.board?.getAction() == ActionEnum.CREATE_TRAPEZOID; }},
-    {name: 'process', tooltip: 'Process Exercise', imagePath: '../../assets/button-images/ProcessIcon.svg', actionToDo: () => { }, highlightButton: () => { return false; }},
+    {name: 'process', tooltip: 'Process Exercise', imagePath: '../../assets/button-images/ProcessIcon.svg', actionToDo: () => { this.processExercise(); }, highlightButton: () => { return false; }},
     {name: 'save', tooltip: 'Save Exercise', imagePath: '../../assets/button-images/SaveIcon.svg', actionToDo: () => { this.saveScheme(); }, highlightButton: () => { return false; }},
     {name: 'load', tooltip: 'Load Exercise', imagePath: '../../assets/button-images/LoadIcon.svg', actionToDo: () => { this.loadScheme(); }, highlightButton: () => { return false; }},
     {name: 'clear', tooltip: 'Clear Board', imagePath: '../../assets/button-images/DeleteIcon.svg', actionToDo: () => { this.reinitializeBoard(); }, highlightButton: () => { return false; }},
@@ -70,6 +73,7 @@ export class DashboardComponent {
 
   board: Board | undefined;
   tabLabel: string;
+  solutionIsLoading: boolean;
 
   private boardId = 'jxgbox';
   private bounds: [number, number, number, number] = [-100, 100, 100, -100];
@@ -81,8 +85,10 @@ export class DashboardComponent {
     private _matIconRegistry: MatIconRegistry,
     private _domSanitizer: DomSanitizer,
     private _snackBar: MatSnackBar,
-    public _dialog: MatDialog) { 
+    public _dialog: MatDialog,
+    private _processExerciseService: ProcessExerciseService) { 
       this.tabLabel = 'exercise';
+      this.solutionIsLoading = false;
       this.actionButtons.forEach(button => this._matIconRegistry.addSvgIcon(
         button.name,
         this._domSanitizer.bypassSecurityTrustResourceUrl(button.imagePath)
@@ -104,31 +110,31 @@ export class DashboardComponent {
     if(this.board.getAction() == ActionEnum.NONE) { return; }
 
     this._snackBar.openFromComponent(InstructionSnackBarComponent, {
-      data: { action: this.board.getAction() },
+      data: { action: this.board.getAction(), exitButtonLabel: 'OK!' },
       duration: 3000,
       panelClass: 'custom-info-snackbar',
     });
   }
 
-  openErrorSnackBar(info: string) {
+  openErrorSnackBar(info: string, closeButtonLabel: string) {
     this._snackBar.openFromComponent(InfoSnackBarComponent, {
-      data: { info: info },
+      data: { info: info, closeButtonLabel: closeButtonLabel },
       duration: 3000,
       panelClass: 'custom-error-snackbar',
     });
   }
 
-  openSuccessSnackBar(info: string) {
+  openSuccessSnackBar(info: string, closeButtonLabel: string) {
     this._snackBar.openFromComponent(InfoSnackBarComponent, {
-      data: { info: info },
+      data: { info: info, closeButtonLabel: closeButtonLabel },
       duration: 3000,
       panelClass: 'custom-success-snackbar',
     });
   }
 
-  openInfoSnackBar(info: string) {
+  openInfoSnackBar(info: string, closeButtonLabel: string) {
     this._snackBar.openFromComponent(InfoSnackBarComponent, {
-      data: { info: info },
+      data: { info: info, closeButtonLabel: closeButtonLabel },
       duration: 3000,
       panelClass: 'custom-info-snackbar',
     });
@@ -137,67 +143,77 @@ export class DashboardComponent {
   requestDataFromUser = (requestType: RequestEnum, callback: (data: AnswearType) => void): void  =>{
     switch(requestType) {
       case RequestEnum.FORMULA:
-        this.openRequestDataDialog(EnterFormulaDialogComponent, (data: { stringValue: string, booleanValue: boolean }) => {
+        this.openRequestDataDialog(EnterFormulaDialogComponent, (data: { stringValue: string, booleanValue: boolean, numberValue: number }) => {
           var formula: string = data.stringValue;
           if(formula.length > 0) { callback({ formula: formula }); }
-          else { this.openErrorSnackBar('Incorrect data have been entered'); }
+          else { this.openErrorSnackBar('Incorrect data have been entered', 'OK!'); }
         });
         break;
       case RequestEnum.LENGTH:
-        this.openRequestDataDialog(SetSegmentLengthDialogComponent, (data: { stringValue: string, booleanValue: boolean }) => {
+        this.openRequestDataDialog(SetSegmentLengthDialogComponent, (data: { stringValue: string, booleanValue: boolean, numberValue: number }) => {
           var length: string = data.stringValue;
           if(length.length > 0) { callback({ length: length }); }
-          else { this.openErrorSnackBar('Incorrect data have been entered'); }
+          else { this.openErrorSnackBar('Incorrect data have been entered', 'OK!'); }
         });
         break;
       case RequestEnum.MEASURE:
-        this.openRequestDataDialog(SetAngleMeasureDialogComponent, (data: { stringValue: string, booleanValue: boolean }) => {
+        this.openRequestDataDialog(SetAngleMeasureDialogComponent, (data: { stringValue: string, booleanValue: boolean, numberValue: number }) => {
           var measure: string = data.stringValue;
           var angleIsConvex: boolean = data.booleanValue;
           if(measure.length > 0) { callback({ measure: measure, angleIsConvex: angleIsConvex }); }
-          else { this.openErrorSnackBar('Incorrect data have been entered'); }
+          else { this.openErrorSnackBar('Incorrect data have been entered', 'OK!'); }
         });
         break;
       case RequestEnum.ANGLE_IS_CONVEX:
-        this.openRequestDataDialog(AngleIsConvexDialogComponent, (data: { stringValue: string, booleanValue: boolean }) => {
+        this.openRequestDataDialog(AngleIsConvexDialogComponent, (data: { stringValue: string, booleanValue: boolean, numberValue: number }) => {
           var angleIsConvex: boolean = data.booleanValue;
           callback({ angleIsConvex: angleIsConvex });
         });
         break;
       case RequestEnum.PARTS_NUMBER_TO_DIVIDE_SEGMENT:
-        this.openRequestDataDialog(DivideSegmentDialogComponent, (data: { stringValue: string, booleanValue: boolean }) => {
+        this.openRequestDataDialog(DivideSegmentDialogComponent, (data: { stringValue: string, booleanValue: boolean, numberValue: number }) => {
           var partsNumber: number = parseInt(data.stringValue);
           if(Number.isInteger(partsNumber) && partsNumber > 1) { callback({ partsNumber: partsNumber }); }
-          else { this.openErrorSnackBar('Incorrect data have been entered'); }
+          else { this.openErrorSnackBar('Incorrect data have been entered', 'OK!'); }
         });
         break;
       case RequestEnum.PARTS_NUMBER_AND_IS_CONVEX_TO_DIVIDE_ANGLE:
-        this.openRequestDataDialog(DivideAngleDialogComponent, (data: { stringValue: string, booleanValue: boolean }) => {
+        this.openRequestDataDialog(DivideAngleDialogComponent, (data: { stringValue: string, booleanValue: boolean, numberValue: number }) => {
           var partsNumber: number = parseInt(data.stringValue);
           var angleIsConvex: boolean = data.booleanValue;
           if(Number.isInteger(partsNumber) && partsNumber > 1) { callback({ partsNumber: partsNumber, angleIsConvex: angleIsConvex }); }
-          else { this.openErrorSnackBar('Incorrect data have been entered'); }
+          else { this.openErrorSnackBar('Incorrect data have been entered', 'OK!'); }
         });
         break;
       case RequestEnum.PERIMETER:
-        this.openRequestDataDialog(SetPerimeterDialogComponent, (data: { stringValue: string, booleanValue: boolean }) => {
+        this.openRequestDataDialog(SetPerimeterDialogComponent, (data: { stringValue: string, booleanValue: boolean, numberValue: number }) => {
           var perimeter: string = data.stringValue;
           if(perimeter.length > 0) { callback({ perimeter: perimeter }); }
-          else { this.openErrorSnackBar('Incorrect data have been entered'); }
+          else { this.openErrorSnackBar('Incorrect data have been entered', 'OK!'); }
         });
         break;
       case RequestEnum.AREA:
-        this.openRequestDataDialog(SetAreaDialogComponent, (data: { stringValue: string, booleanValue: boolean }) => {
+        this.openRequestDataDialog(SetAreaDialogComponent, (data: { stringValue: string, booleanValue: boolean, numberValue: number }) => {
           var area: string = data.stringValue;
           if(area.length > 0) { callback({ area: area }); }
-          else { this.openErrorSnackBar('Incorrect data have been entered'); }
+          else { this.openErrorSnackBar('Incorrect data have been entered', 'OK!'); }
         });
         break;
       case RequestEnum.POLYGON_SIDES_NUMBER:
-        this.openRequestDataDialog(EnterPolygonSidesNumberDialogComponent, (data: { stringValue: string, booleanValue: boolean }) => {
+        this.openRequestDataDialog(EnterPolygonSidesNumberDialogComponent, (data: { stringValue: string, booleanValue: boolean, numberValue: number }) => {
           var sides: number = parseInt(data.stringValue);
           if(Number.isInteger(sides) && sides > 2) { callback({ sides: sides }); }
-          else { this.openErrorSnackBar('Incorrect data have been entered'); }
+          else { this.openErrorSnackBar('Incorrect data have been entered', 'OK!'); }
+        });
+        break;
+      case RequestEnum.TRIANGLE_TYPE:
+        this.openRequestDataDialog(SelectTriangleTypeDialogComponent, (data: { stringValue: string, booleanValue: boolean, numberValue: number }) => {
+          callback({ triangleType: data.numberValue });
+        });
+        break;
+      case RequestEnum.TRAPEZOID_TYPE:
+        this.openRequestDataDialog(SelectTrapezoidTypeDialogComponent, (data: { stringValue: string, booleanValue: boolean, numberValue: number }) => {
+          callback({ trapezoidType: data.numberValue });
         });
         break;
       default:
@@ -206,12 +222,34 @@ export class DashboardComponent {
     }
   }
 
-  private openRequestDataDialog = (dialogComponent: any, callback: (data: { stringValue: string, booleanValue: boolean }) => void): void => {
+  private openRequestDataDialog = (dialogComponent: any, callback: (data: { stringValue: string, booleanValue: boolean, numberValue: number }) => void): void => {
     const dialogRef = this._dialog.open(dialogComponent);
 
     dialogRef.afterClosed().subscribe(result => {
-      if(result) { callback({ stringValue: result.stringInput, booleanValue: result.booleanInput }); }
+      if(result) { callback({ stringValue: result.stringInput, booleanValue: result.booleanInput, numberValue: result.numberValue }); }
     });
+  }
+
+  processExercise() {
+    if(this.board === undefined) { return; }
+
+    this.setTab('solution');
+    this.solutionIsLoading = true;
+    
+    setTimeout(() => {
+      this._processExerciseService.compute(this.board!.getScheme()).subscribe(
+        response => {
+          this.solutionIsLoading = false;
+          console.log(response);
+        },
+        error => {
+            this.setTab('exercise');
+            this.solutionIsLoading = false;
+            this.openErrorSnackBar('Cannot process exercise. Something hs gone wrong', 'OK!');
+            console.error('Error:', error);
+        }
+      );
+    }, 500);
   }
 
   saveScheme() {
@@ -219,7 +257,7 @@ export class DashboardComponent {
   }
 
   loadScheme() {
-    
+    console.log(this.board?.getScheme());
   }
 
   reinitializeBoard() {

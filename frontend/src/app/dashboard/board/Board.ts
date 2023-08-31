@@ -2,6 +2,7 @@ import { ActionEnum } from "./ActionEnum";
 import { BoardScheme } from "./BoardScheme";
 import { BoardSchemeJson } from "./BoardSchemeJson";
 import { Colors, Naming, Options, Sizes } from "./Config";
+import { PolygonType } from "./PolygonType";
 import { AnswearType, RequestEnum } from "./RequestEnum";
 import { distance, genRandom, isCircle, isIntersectionPoint, isLine, isPoint, xCoord, yCoord } from "./Utils";
 
@@ -24,7 +25,15 @@ export class Board {
 
     private boardScheme: BoardScheme;
 
-    constructor(private boardId: string, private bounds: [number, number, number, number], private maxBounds: [number, number, number, number], private showAxis: boolean, private keepAspectRatio: boolean, private requestDataFromUser: (requestType: RequestEnum, callback: (data: AnswearType) => void) => void) {
+    constructor(
+        private boardId: string, 
+        private bounds: [number, number, number, number], 
+        private maxBounds: [number, number, number, number], 
+        private showAxis: boolean, 
+        private keepAspectRatio: boolean, 
+        private requestDataFromUser: (requestType: RequestEnum, callback: (data: AnswearType) => void) => void
+    ) {
+        
         this.board = JXG.JSXGraph.initBoard(boardId, { boundingbox: bounds, maxBoundingBox: maxBounds, showcopyright: false, axis: showAxis, keepAspectRatio: keepAspectRatio });
         this.board.on('down', this.handleBoardClick);
         this.board.on('update', this.handleBoardUpdate);
@@ -57,7 +66,7 @@ export class Board {
     setAction(action: ActionEnum): void {
         if(action == ActionEnum.ENTER_FORMULA) { 
             this.action = ActionEnum.NONE;
-            this.addFormula(); 
+            this.addFormulaRequestData(); 
         }
         else {
             this.action = action;   
@@ -178,7 +187,7 @@ export class Board {
         return point;
     }
 
-    private createSliderPoint(x: number, y: number, shape: any): any {
+    private createSlidingPoint(x: number, y: number, shape: any): any {
         const point = this.board.create('glider', [x, y, shape], {
             name: this.getNextCapitalLetter(), 
             label: { fixed:false, fontSize: Sizes.TEXT_FONT },
@@ -404,9 +413,9 @@ export class Board {
         return line;
     }
 
-    private divideSegment(segmentEnds: [any, any], partsNumber: number): any[] {
+    private divideSegment(segmentEnds: [any, any], partsNumber: number, addDependencyToScheme: boolean): any[] {
         var line: any;
-        const lineSearch: [boolean, string] = this.boardScheme.getLineByPoints(segmentEnds[0].id, segmentEnds[1].id);
+        const lineSearch: [boolean, string] = this.boardScheme.getSegementOrRayOrLineByPoints(segmentEnds[0].id, segmentEnds[1].id);
         if(lineSearch[0]) { line = this.board.objects[lineSearch[1]]; }
         else { line = this.createSegment(segmentEnds[0], segmentEnds[1]); }
 
@@ -428,13 +437,21 @@ export class Board {
         for(let i = 1; i < points.length; i++) { equalSegments.push([points[i - 1], points[i]]); }
         this.markEqualSegments(equalSegments);
 
+        if(addDependencyToScheme) {
+            for(let i = 0; i < equalSegments.length; i++) {
+                for(let j = i + 1; j < equalSegments.length; j++) {
+                    this.boardScheme.addEqualSegments(...equalSegments[i], ...equalSegments[j]);
+                }
+            }
+        }
+
         return points;
     }
 
     private divideSegmentRequestData(segmentEnds: [any, any]): void {
         this.requestDataFromUser(RequestEnum.PARTS_NUMBER_TO_DIVIDE_SEGMENT, (data) => {
             const castedData = data as { partsNumber: number };
-            this.divideSegment(segmentEnds, castedData.partsNumber);
+            this.divideSegment(segmentEnds, castedData.partsNumber, true);
         });
     }
 
@@ -453,7 +470,7 @@ export class Board {
         this.segmentHatchesCounter++;
     }
 
-    private divideAngle(anglePoints: [any, any, any], partsNumber: number, angleIsConvex: boolean): any[] {
+    private divideAngle(anglePoints: [any, any, any], partsNumber: number, angleIsConvex: boolean, addDependencyToScheme: boolean): any[] {
         var points: any[] = [];
         points.push(anglePoints[0]);
         for(let i = 1; i < partsNumber; i++) {
@@ -477,13 +494,21 @@ export class Board {
         for(let i = 1; i < points.length; i++) { equalAngles.push([points[i - 1], anglePoints[1], points[i]]); }
         this.markEqualAngles(equalAngles);
 
+        if(addDependencyToScheme) {
+            for(let i = 0; i < equalAngles.length; i++) {
+                for(let j = i + 1; j < equalAngles.length; j++) {
+                    this.boardScheme.addEqualAngles(...equalAngles[i], ...equalAngles[j]);
+                }
+            }
+        }
+
         return points;
     }
 
     private divideAngleRequestData(anglePoints: [any, any, any]): void {
         this.requestDataFromUser(RequestEnum.PARTS_NUMBER_AND_IS_CONVEX_TO_DIVIDE_ANGLE, (data) => {
             const castedData = data as { partsNumber: number, angleIsConvex: boolean };
-            this.divideAngle(anglePoints, castedData.partsNumber, castedData.angleIsConvex);
+            this.divideAngle(anglePoints, castedData.partsNumber, castedData.angleIsConvex, true);
         });
     }
 
@@ -515,8 +540,8 @@ export class Board {
     }
 
     private createMidPerpendicular(baseSegmentEnds: [any, any]): any {
-        const points = this.divideSegment(baseSegmentEnds, 2);
-        const segmentSearch = this.boardScheme.getLineByPoints(baseSegmentEnds[0].id, baseSegmentEnds[1].id);
+        const points = this.divideSegment(baseSegmentEnds, 2, false);
+        const segmentSearch = this.boardScheme.getSegementOrRayOrLineByPoints(baseSegmentEnds[0].id, baseSegmentEnds[1].id);
         const segment = this.board.objects[segmentSearch[1]];
         const line = this.createPerpendicularLine(segment, points[1]);
 
@@ -525,7 +550,7 @@ export class Board {
     }
 
     private createBisector(baseAnglePoints: [any, any, any], angleIsConvex: boolean): any {
-        const points = this.divideAngle(baseAnglePoints, 2, angleIsConvex);
+        const points = this.divideAngle(baseAnglePoints, 2, angleIsConvex, false);
         const line = this.createRay(baseAnglePoints[1], points[1]);
 
         line.on('down', (event: any) => { this.handleLineClick(event, line); });
@@ -558,7 +583,7 @@ export class Board {
         });
 
         line.on('down', (event: any) => { this.handleLineClick(event, line); });
-        //this.boardScheme.addTangentLine(line);
+        this.boardScheme.addTangentLine(circle, line);
         noIntersectWithIds.forEach((id) => this.noIntersect.push([line.id, id]));
         this.createIntersectionPoints(line);
 
@@ -578,6 +603,7 @@ export class Board {
         });
 
         const tangentCircle = this.createCircle(circleCenter, intersectionPoint);
+        this.boardScheme.addTangentCircle(circle, tangentCircle);
 
         return tangentCircle;
     }
@@ -589,6 +615,7 @@ export class Board {
         });
 
         const tangentCircle = this.createCircle(circleCenter, intersectionPoint);
+        this.boardScheme.addTangentLine(tangentCircle, line);
 
         return tangentCircle;
     }
@@ -618,6 +645,7 @@ export class Board {
         });
 
         const circle = this.createCircle(center, polygonPoints[0]);
+        this.boardScheme.addCircumscribedCircle(circle, polygonPoints);
 
         return circle;
     }
@@ -659,7 +687,7 @@ export class Board {
         var noIntersectWith: string[] = [];
 
         const getSegment = (end1: any, end2: any): any => { 
-            const sideSearch = this.boardScheme.getLineByPoints(end1.id, end2.id)
+            const sideSearch = this.boardScheme.getSegementOrRayOrLineByPoints(end1.id, end2.id)
             if(sideSearch[0]) { return this.board.objects[sideSearch[1]]; }
             else { return this.createSegment(end1, end2); }
         }
@@ -674,6 +702,7 @@ export class Board {
         }
 
         const circle = this.createCircle(center, pointsOnSides[0], noIntersectWith);
+        this.boardScheme.addInscribedCircle(circle, polygonPoints);
 
         return circle;
     }
@@ -682,8 +711,8 @@ export class Board {
         const getBoardInstance = (): any => { return this; }
         
         const center = this.createPointFunCoord(function() {
-            const rotatedPoint1 = {coords:JXG.Math.Geometry.rotation(trianglePoints[1], trianglePoints[0], Math.PI)};
-            const rotatedPoint2 = {coords:JXG.Math.Geometry.rotation(trianglePoints[2], trianglePoints[0], Math.PI)};
+            const rotatedPoint1 = { coords: JXG.Math.Geometry.rotation(trianglePoints[1], trianglePoints[0], Math.PI) };
+            const rotatedPoint2 = { coords: JXG.Math.Geometry.rotation(trianglePoints[2], trianglePoints[0], Math.PI) };
 
             const bisector1Point = JXG.Math.Geometry.angleBisector(rotatedPoint1, trianglePoints[1], trianglePoints[2], getBoardInstance().board);
             const bisector2Point = JXG.Math.Geometry.angleBisector(rotatedPoint2, trianglePoints[2], trianglePoints[1], getBoardInstance().board);
@@ -699,7 +728,7 @@ export class Board {
         });
 
         var side: any;
-        const segmentSearch: [boolean, string] = this.boardScheme.getLineByPoints(trianglePoints[1].id, trianglePoints[2].id);
+        const segmentSearch: [boolean, string] = this.boardScheme.getSegementOrRayOrLineByPoints(trianglePoints[1].id, trianglePoints[2].id);
         if(segmentSearch[0]) { side = this.board.objects[segmentSearch[1]]; }
         else { side = this.createSegment(trianglePoints[1], trianglePoints[2]); }
 
@@ -722,20 +751,22 @@ export class Board {
         });
 
         const circle = this.createCircle(center, sideSpotPoint, [side.id, ray1.id, ray2.id]);
+        this.boardScheme.addEscribedCircle(circle, trianglePoints);
 
         return circle;
     }
 
     private createMedian(vertexPoint: any, basePoints: [any, any]): any {
-        const pointOnBase = this.divideSegment(basePoints, 2);
+        const pointOnBase = this.divideSegment(basePoints, 2, false);
         const median = this.createSegment(vertexPoint, pointOnBase[1]);
+        this.boardScheme.addMedian(vertexPoint, ...basePoints, vertexPoint, pointOnBase[1]);
 
         return median;
     }
 
     private createAltitude(vertexPoint: any, basePoints: [any, any]): any {
         var line: any;
-        const lineSearch: [boolean, string] = this.boardScheme.getLineByPoints(basePoints[0].id, basePoints[1].id);
+        const lineSearch: [boolean, string] = this.boardScheme.getSegementOrRayOrLineByPoints(basePoints[0].id, basePoints[1].id);
         if(lineSearch[0]) { line = this.board.objects[lineSearch[1]]; }
         else { line = this.createSegment(basePoints[0], basePoints[1]); }
 
@@ -745,30 +776,81 @@ export class Board {
         });
 
         const altitude = this.createSegment(vertexPoint, spotPoint);
+        this.boardScheme.addMedian(vertexPoint, ...basePoints, vertexPoint, spotPoint);
 
         return altitude;
     }
 
     private createMidSegment(side1Points: [any, any], side2Points: [any, any]): any {
-        const pointOn1Side = this.divideSegment(side1Points, 2);
-        const pointOn2Side = this.divideSegment(side2Points, 2);
+        const pointOn1Side = this.divideSegment(side1Points, 2, false);
+        const pointOn2Side = this.divideSegment(side2Points, 2, false);
         const midSegment = this.createSegment(pointOn1Side[1], pointOn2Side[1]);
+        this.boardScheme.addMidSegment(...side1Points, ...side2Points, pointOn1Side[1], pointOn2Side[1]);
 
         return midSegment;
     }
 
-    private cretaeTrianglePoints(vertex1: any, vertex2: any): [any, any, any] {
-        // it creates isosceles triangle
+    private createTrianglePointsRequestData(vertex1: any, vertex2: any): void {
+        this.requestDataFromUser(RequestEnum.TRIANGLE_TYPE, (data) => {
+            const castedData = data as { triangleType: PolygonType.SCALENE_ACUTE_TRIANGLE | PolygonType.SCALENE_RIGHT_TRIANGLE | PolygonType.EQUILATERAL_TRIANGLE | PolygonType.ISOSCELES_ACUTE_TRIANGLE | PolygonType.ISOSCELES_RIGHT_TRIANGLE | PolygonType.OBTUSE_SCALENE_TRIANGLE | PolygonType.OBTUSE_ISOSCELES_TRIANGLE};
 
+            switch(castedData.triangleType) {
+                case PolygonType.SCALENE_ACUTE_TRIANGLE:
+                    this.createScaleneAcuteTrianglePoints(vertex1, vertex2);
+                    break;
+                case PolygonType.SCALENE_RIGHT_TRIANGLE:
+                    this.createScaleneRightTrianglePoints(vertex1, vertex2);
+                    break;
+                case PolygonType.EQUILATERAL_TRIANGLE:
+                    this.createEquilateralTrianglePoints(vertex1, vertex2);
+                    break;
+                case PolygonType.ISOSCELES_ACUTE_TRIANGLE:
+                    this.createIsoscelesAcuteTrianglePoints(vertex1, vertex2);
+                    break;
+                case PolygonType.ISOSCELES_RIGHT_TRIANGLE:
+                    this.createIsoscelesRightTrianglePoints(vertex1, vertex2);
+                    break;
+                case PolygonType.OBTUSE_SCALENE_TRIANGLE:
+                    this.createObtuseScaleneTrianglePoints(vertex1, vertex2);
+                    break;
+                case PolygonType.OBTUSE_ISOSCELES_TRIANGLE:
+                    this.createObtuseIsoscelesTrianglePoints(vertex1, vertex2);
+                    break;
+                default:
+                    // unreachable
+                    break;
+            }
+        });
+    }
+
+    private createScaleneAcuteTrianglePoints(vertex1: any, vertex2: any): [any, any, any] {
+        const d = distance(vertex1, vertex2);
+        return [vertex1, vertex2, vertex1];
+    }
+
+    private createScaleneRightTrianglePoints(vertex1: any, vertex2: any): [any, any, any] {
+        return [vertex1, vertex1, vertex1];
+    }
+
+    private createEquilateralTrianglePoints(vertex1: any, vertex2: any): [any, any, any] {
+        const vertex3 = this.createPointFunCoord(function() {
+            const vertex3Coords = JXG.Math.Geometry.rotation(vertex1, vertex2,  Math.PI / 3);
+            return vertex3Coords.usrCoords;
+        });
+
+        return [vertex1, vertex2, vertex3];
+    }
+
+    private createIsoscelesAcuteTrianglePoints(vertex1: any, vertex2: any): [any, any, any] {
         const guideLine = this.board.create('curve', [
-            function(t: number) { 
+            function(t: number) {
                 return t; 
             }, 
             function(t: number) { 
                 const xMid = (xCoord(vertex1) + xCoord(vertex2)) / 2;
                 const yMid = (yCoord(vertex1) + yCoord(vertex2)) / 2;
                 
-                const epsilon = 0.0000001;
+                const epsilon = 0.1;
                 const dx: number = xCoord(vertex2) - xCoord(vertex1);
                 const dy: number = yCoord(vertex2) - yCoord(vertex1);
 
@@ -784,9 +866,21 @@ export class Board {
             visible: false
         });
         
-        const vertex3 = this.createSliderPoint(0, 0, guideLine);
+        const vertex3 = this.createSlidingPoint(0, 0, guideLine);
 
         return [vertex1, vertex2, vertex3];
+    }
+
+    private createIsoscelesRightTrianglePoints(vertex1: any, vertex2: any): [any, any, any] {
+        return [vertex1, vertex1, vertex1];
+    }
+
+    private createObtuseScaleneTrianglePoints(vertex1: any, vertex2: any): [any, any, any] {
+        return [vertex1, vertex1, vertex1];
+    }
+    
+    private createObtuseIsoscelesTrianglePoints(vertex1: any, vertex2: any): [any, any, any] {
+        return [vertex1, vertex1, vertex1];
     }
 
     private createSquarePoints(vertex1: any, vertex2: any): [any, any, any, any] {
@@ -830,7 +924,7 @@ export class Board {
 
         const dx = xCoord(vertex1) - xCoord(vertex2);
         const dy = yCoord(vertex1) - yCoord(vertex2);
-        const vertex3 = this.createSliderPoint(xCoord(vertex1) + dy, yCoord(vertex1) - dx, guideLine);
+        const vertex3 = this.createSlidingPoint(xCoord(vertex1) + dy, yCoord(vertex1) - dx, guideLine);
 
         const vertex4 = this.createPointFunCoord(function() {
             const dx = xCoord(vertex1) - xCoord(vertex3);
@@ -913,7 +1007,7 @@ export class Board {
             visible: false
         });
 
-        const vertex3 = this.createSliderPoint(0, 0, guideLine);
+        const vertex3 = this.createSlidingPoint(0, 0, guideLine);
 
         const vertex4 = this.createPointFunCoord(function() {
             const dx = xCoord(vertex3) - xCoord(vertex2);
@@ -928,7 +1022,28 @@ export class Board {
         return [vertex1, vertex2, vertex3, vertex4];
     }
 
-    private createTrapezoidPoints(vertex1: any, vertex2: any, vertex3: any): [any, any, any, any] {
+    private createTrapezoidPointsRequestData(vertex1: any, vertex2: any, vertex3: any): void {
+        this.requestDataFromUser(RequestEnum.TRAPEZOID_TYPE, (data) => {
+            const castedData = data as { trapezoidType: PolygonType.SCALENE_TRAPEZOID | PolygonType.ISOSCELES_TRAPEZOID | PolygonType.RIGHT_TRAPEZOID };
+
+            switch(castedData.trapezoidType) {
+                case PolygonType.SCALENE_TRAPEZOID:
+                    this.createScaleneTrapezoidPoints(vertex1, vertex2, vertex3);
+                    break;
+                case PolygonType.ISOSCELES_TRAPEZOID:
+                    this.createIsoscelesTrapezoidPoints(vertex1, vertex2, vertex3);
+                    break;
+                case PolygonType.RIGHT_TRAPEZOID:
+                    this.createRightTrapezoidPoints(vertex1, vertex2, vertex3);
+                    break;
+                default:
+                    // unreachable
+                    break;
+            }
+        });
+    }
+
+    private createScaleneTrapezoidPoints(vertex1: any, vertex2: any, vertex3: any): [any, any, any, any] {
         // it creates isosceles trapezoid
         // top base includes vertex1 and vertex2
 
@@ -945,68 +1060,120 @@ export class Board {
         return [vertex1, vertex2, vertex3, vertex4];
     }
 
-    private setSegmentLength(segmentEnds: [any, any]): void {
+    private createIsoscelesTrapezoidPoints(vertex1: any, vertex2: any, vertex3: any): [any, any, any, any] {
+        // it creates isosceles trapezoid
+        // top base includes vertex1 and vertex2
+
+        const vertex4 = this.createPointFunCoord(function() {
+            const dx = xCoord(vertex3) - xCoord(vertex2);
+            const dy = yCoord(vertex3) - yCoord(vertex2);
+            var newUsrCoords: [number, number, number] = [...vertex1.coords.usrCoords] as [number, number, number];
+            newUsrCoords[1] -= dx;
+            newUsrCoords[2] += dy;
+
+            return newUsrCoords;
+        });
+
+        return [vertex1, vertex2, vertex3, vertex4];
+    }
+
+    private createRightTrapezoidPoints(vertex1: any, vertex2: any, vertex3: any): [any, any, any, any] {
+        // it creates isosceles trapezoid
+        // top base includes vertex1 and vertex2
+
+        const vertex4 = this.createPointFunCoord(function() {
+            const dx = xCoord(vertex3) - xCoord(vertex2);
+            const dy = yCoord(vertex3) - yCoord(vertex2);
+            var newUsrCoords: [number, number, number] = [...vertex1.coords.usrCoords] as [number, number, number];
+            newUsrCoords[1] -= dx;
+            newUsrCoords[2] += dy;
+
+            return newUsrCoords;
+        });
+
+        return [vertex1, vertex2, vertex3, vertex4];
+    }
+
+    private setSegmentLength(segmentEnds: [any, any], length: string): void {
+        this.boardScheme.setSegmentLength(segmentEnds[0], segmentEnds[1], length);
+        this.showSegmentLength(segmentEnds[0], segmentEnds[1], length);
+    }
+
+    private setSegmentLengthRequestData(segmentEnds: [any, any]): void {
         this.requestDataFromUser(RequestEnum.LENGTH, (data) => {
             const castedData = data as { length: string };
-            this.boardScheme.setSegmentLength(segmentEnds[0], segmentEnds[1], castedData.length);
-            this.showSegmentLength(segmentEnds[0], segmentEnds[1], castedData.length);
+            this.setSegmentLength(segmentEnds, castedData.length);
         });
     }
 
-    private setAngleMeasure(anglePoints: [any, any, any]): void {
+    private setAngleMeasure(anglePoints: [any, any, any], angleIsConvex: boolean, measure: string): void {
+        this.boardScheme.setAngleMeasure(anglePoints[0], anglePoints[1], anglePoints[2], angleIsConvex, measure);
+        this.showAngleMeasure(anglePoints[0], anglePoints[1], anglePoints[2], angleIsConvex, measure);
+    }
+
+    private setAngleMeasureRequestData(anglePoints: [any, any, any]): void {
         this.requestDataFromUser(RequestEnum.MEASURE, (data) => {
             const castedData = data as { measure: string, angleIsConvex: boolean };
-            this.boardScheme.setAngleMeasure(anglePoints[0], anglePoints[1], anglePoints[2], castedData.angleIsConvex, castedData.measure);
-            this.showAngleMeasure(anglePoints[0], anglePoints[1], anglePoints[2], castedData.angleIsConvex, castedData.measure);
+            this.setAngleMeasure(anglePoints, castedData.angleIsConvex, castedData.measure);
         });
     }
 
-    private addFormula(): void {
+    private addFormula(formula: string): void {
+        this.boardScheme.addFormula(formula);
+        this.enteredFormulas.push(
+            this.board.create('text', [
+                0, 0, formula], 
+                { fontSize: Sizes.TEXT_FONT }
+            ));
+        this.showFormulas();
+    }
+
+    private addFormulaRequestData(): void {
         this.requestDataFromUser(RequestEnum.FORMULA, (data) => {
             const castedData = data as { formula: string };
-            this.boardScheme.addFormula(castedData.formula);
-            this.enteredFormulas.push(
-                this.board.create('text', [
-                    0, 0, castedData.formula], 
-                    { fontSize: Sizes.TEXT_FONT }
-                ));
-            this.showFormulas();
+            this.addFormula(castedData.formula);
         });
     }
 
-    private addPerimeter(polygonPoints: any[]): void {
+    private addPerimeter(polygonPoints: any[], perimeter: string): void {
+        var pointNames = '';
+        for(let i = 0; i < polygonPoints.length; i++) { pointNames += polygonPoints[i].name; }
+        const formula = 'P(' + pointNames + ') = ' + perimeter;
+        
+        this.boardScheme.addFormula(formula);
+        this.enteredFormulas.push(
+            this.board.create('text', [
+                0, 0, formula], 
+                { fontSize: Sizes.TEXT_FONT }
+            ));
+        this.showFormulas();
+    }
+
+    private addPerimeterRequestData(polygonPoints: any[]): void {
         this.requestDataFromUser(RequestEnum.PERIMETER, (data) => {
             const castedData = data as { perimeter: string };
-
-            var pointNames = '';
-            for(let i = 0; i < polygonPoints.length; i++) { pointNames += polygonPoints[i].name; }
-            const formula = 'P(' + pointNames + ') = ' + castedData.perimeter;
-            
-            this.boardScheme.addFormula(formula);
-            this.enteredFormulas.push(
-                this.board.create('text', [
-                    0, 0, formula], 
-                    { fontSize: Sizes.TEXT_FONT }
-                ));
-            this.showFormulas();
+            this.addPerimeter(polygonPoints, castedData.perimeter);
         });
     }
 
-    private addArea(polygonPoints: any[]): void {
+    private addArea(polygonPoints: any[], area: string): void {
+        var pointNames = '';
+        for(let i = 0; i < polygonPoints.length; i++) { pointNames += polygonPoints[i].name; }
+        const formula = 'A(' + pointNames + ') = ' + area;
+        
+        this.boardScheme.addFormula(formula);
+        this.enteredFormulas.push(
+            this.board.create('text', [
+                0, 0, formula], 
+                { fontSize: Sizes.TEXT_FONT }
+            ));
+        this.showFormulas();
+    }
+
+    private addAreaRequestData(polygonPoints: any[]): void {
         this.requestDataFromUser(RequestEnum.AREA, (data) => {
             const castedData = data as { area: string };
-
-            var pointNames = '';
-            for(let i = 0; i < polygonPoints.length; i++) { pointNames += polygonPoints[i].name; }
-            const formula = 'A(' + pointNames + ') = ' + castedData.area;
-            
-            this.boardScheme.addFormula(formula);
-            this.enteredFormulas.push(
-                this.board.create('text', [
-                    0, 0, formula], 
-                    { fontSize: Sizes.TEXT_FONT }
-                ));
-            this.showFormulas();
+            this.addArea(polygonPoints, castedData.area);
         });
     }
 
@@ -1234,7 +1401,7 @@ export class Board {
                 this.shapesAccumulator.push(point);
                 break;
             case ActionEnum.CREATE_TANGENT_LINE:
-                if(this.shapesAccumulator.length == 1 && this.boardScheme.pointLiesOnCircle(this.shapesAccumulator[0].id, point.id)) { this.shapesAccumulator.push(point) }
+                if(this.shapesAccumulator.length == 1 && this.boardScheme.pointLiesOnShapes(this.shapesAccumulator[0].id, point.id)) { this.shapesAccumulator.push(point) }
                 break;
             case ActionEnum.CREATE_TANGENT_CIRCLE:
                 if(this.shapesAccumulator.length == 1) { this.shapesAccumulator.push(point) }
@@ -1589,13 +1756,13 @@ export class Board {
                 break;
             case ActionEnum.SET_SEGMENT_LENGHT:
                 if(this.shapesAccumulator.length == 2) { 
-                    this.setSegmentLength([this.shapesAccumulator[0], this.shapesAccumulator[1]]); 
+                    this.setSegmentLengthRequestData([this.shapesAccumulator[0], this.shapesAccumulator[1]]); 
                     this.shapesAccumulator = [];
                 }
                 break;
             case ActionEnum.SET_ANGLE_MEASURE:
                 if(this.shapesAccumulator.length == 3) { 
-                    this.setAngleMeasure([this.shapesAccumulator[0], this.shapesAccumulator[1], this.shapesAccumulator[2]]); 
+                    this.setAngleMeasureRequestData([this.shapesAccumulator[0], this.shapesAccumulator[1], this.shapesAccumulator[2]]); 
                     this.shapesAccumulator = [];
                 }
                 break;
@@ -1603,19 +1770,19 @@ export class Board {
                 break;
             case ActionEnum.SET_PERIMETER:
                 if(this.pointsRecur(this.shapesAccumulator)) { 
-                    this.addPerimeter(this.shapesAccumulator.slice(0, this.shapesAccumulator.length - 1)); 
+                    this.addPerimeterRequestData(this.shapesAccumulator.slice(0, this.shapesAccumulator.length - 1)); 
                     this.shapesAccumulator = [];
                 }
                 break;
             case ActionEnum.SET_AREA:
                 if(this.pointsRecur(this.shapesAccumulator)) { 
-                    this.addArea(this.shapesAccumulator.slice(0, this.shapesAccumulator.length - 1)); 
+                    this.addAreaRequestData(this.shapesAccumulator.slice(0, this.shapesAccumulator.length - 1)); 
                     this.shapesAccumulator = [];
                 }
                 break;
             case ActionEnum.CREATE_TRIANGLE:
                 if(this.shapesAccumulator.length == 2) {
-                    this.cretaeTrianglePoints(this.shapesAccumulator[0], this.shapesAccumulator[1]);
+                    this.createTrianglePointsRequestData(this.shapesAccumulator[0], this.shapesAccumulator[1]);
                     this.shapesAccumulator = [];
                 }
                 break;
@@ -1657,7 +1824,7 @@ export class Board {
                 break;
             case ActionEnum.CREATE_TRAPEZOID:
                 if(this.shapesAccumulator.length == 3) {
-                    this.createTrapezoidPoints(this.shapesAccumulator[0], this.shapesAccumulator[1], this.shapesAccumulator[2]);
+                    this.createTrapezoidPointsRequestData(this.shapesAccumulator[0], this.shapesAccumulator[1], this.shapesAccumulator[2]);
                     this.shapesAccumulator = [];
                 }
                 break;

@@ -39,3 +39,7 @@ body { margin: 0; font-family: 'Quicksand', sans-serif; }
     padding-top: 5px!important;
     padding-bottom: 5px!important;
 }
+
+.mat-mdc-progress-spinner {
+    --mdc-circular-progress-active-indicator-color: #0AC5A8;
+}

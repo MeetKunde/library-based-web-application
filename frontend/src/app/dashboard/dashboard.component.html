@@ -1,10 +1,19 @@
 <mat-sidenav-container>
-    <mat-sidenav [disableClose]="true" [hidden]="tabLabel=='solution'" mode="side" opened>
+    <mat-sidenav [disableClose]="true" mode="side" opened>
         
         <div [hidden]="tabLabel != 'exercise'" class="grid-container">
             <button mat-icon-button [class.creator-icon-button]="!button.highlightButton()" [class.creator-icon-button-selected]="button.highlightButton()" *ngFor="let button of actionButtons" matTooltip="{{button.tooltip}}" (click)="button.actionToDo();">
                 <mat-icon svgIcon="{{button.name}}"></mat-icon>
             </button>
+        </div>
+
+        <div [hidden]="tabLabel != 'solution'" clas="grid-container">
+            <div class="grid-container">
+                <button mat-icon-button class="creator-icon-button">
+                    <mat-icon></mat-icon>
+                </button>
+            </div>
+
         </div>
 
         <div [hidden]="tabLabel != 'settings'">
@@ -42,7 +51,12 @@
         </mat-card>
 
         <mat-card [hidden]="tabLabel != 'solution'" class="main-content">
-            Solution Presenting
+            <div *ngIf="solutionIsLoading" class="spinner-container">
+                <mat-spinner></mat-spinner>
+            </div>
+            <div *ngIf="!solutionIsLoading">
+                Solution Presenting
+            </div>
         </mat-card>
 
         <div class="tab-labels">
@@ -52,4 +66,5 @@
         </div>
 
     </mat-sidenav-content>
+
 </mat-sidenav-container>

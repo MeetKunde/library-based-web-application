@@ -21,6 +21,8 @@ import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatDialogModule } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatChipsModule } from '@angular/material/chips'
 
 import { InstructionSnackBarComponent } from './dashboard/snackbars/instructionSnackBar.component';
 import { InfoSnackBarComponent } from './dashboard/snackbars/infoSnackBar.component';
@@ -33,7 +35,8 @@ import { AngleIsConvexDialogComponent } from './dashboard/dialogs/angleIsConvexD
 import { SetPerimeterDialogComponent } from './dashboard/dialogs/setPerimeter.component';
 import { SetAreaDialogComponent } from './dashboard/dialogs/setArea.component';
 import { EnterPolygonSidesNumberDialogComponent } from './dashboard/dialogs/enterPolygonSidesNumberDialog.component';
-
+import { SelectTriangleTypeDialogComponent } from './dashboard/dialogs/selectTriangleTypeDialog.component';
+import { SelectTrapezoidTypeDialogComponent } from './dashboard/dialogs/selectTrapezoidTypeDialog.component';
 
 
 @NgModule({
@@ -51,6 +54,8 @@ import { EnterPolygonSidesNumberDialogComponent } from './dashboard/dialogs/ente
     SetPerimeterDialogComponent,
     SetAreaDialogComponent,
     EnterPolygonSidesNumberDialogComponent,
+    SelectTriangleTypeDialogComponent,
+    SelectTrapezoidTypeDialogComponent,
   ],
   imports: [
     BrowserModule,
@@ -72,6 +77,8 @@ import { EnterPolygonSidesNumberDialogComponent } from './dashboard/dialogs/ente
     MatFormFieldModule,
     MatInputModule,
     MatDialogModule,
+    MatProgressSpinnerModule,
+    MatChipsModule,
   ],
   providers: [],
   bootstrap: [AppComponent]

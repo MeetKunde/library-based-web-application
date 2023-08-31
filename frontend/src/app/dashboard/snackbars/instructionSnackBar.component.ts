@@ -14,12 +14,13 @@ import { ActionEnum } from '../board/ActionEnum';
 })
 export class InstructionSnackBarComponent {
   text: string = '';
-  exitButtonLabel = 'OK!';
+  exitButtonLabel = '';
 
   constructor(
     public snackBarRef: MatSnackBarRef<InstructionSnackBarComponent>,
-    @Inject(MAT_SNACK_BAR_DATA) public data: { action: ActionEnum; }
+    @Inject(MAT_SNACK_BAR_DATA) public data: { action: ActionEnum; exitButtonLabel: string; }
   ) {
+    this.exitButtonLabel = data.exitButtonLabel;
     switch(data.action) {
       case ActionEnum.NONE:
         this.text = '';

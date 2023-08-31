@@ -13,11 +13,14 @@ import { MatSnackBarRef, MAT_SNACK_BAR_DATA } from '@angular/material/snack-bar'
 })
 export class InfoSnackBarComponent {
   info: string = '';
-  closeButtonLabel = 'OK!';
+  closeButtonLabel = '';
 
   constructor(
     public snackBarRef: MatSnackBarRef<InfoSnackBarComponent>,
-    @Inject(MAT_SNACK_BAR_DATA) public data: { info: string; }
-  ) { this.info = data.info; }
+    @Inject(MAT_SNACK_BAR_DATA) public data: { info: string; closeButtonLabel: string; }
+  ) { 
+      this.info = data.info;
+      this.closeButtonLabel = data.closeButtonLabel;
+    }
 }
   

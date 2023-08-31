@@ -129,3 +129,10 @@ mat-sidenav-container {
     fill: #0AC5A8;
     color: #0AC5A8;
 }
+
+.spinner-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+}

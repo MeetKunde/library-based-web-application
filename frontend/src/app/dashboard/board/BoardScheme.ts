@@ -1,4 +1,5 @@
 import { BoardSchemeJson, CircleJson, LineJson, PointJson } from "./BoardSchemeJson";
+import { PolygonType } from "./PolygonType";
 
 type PointType = {obj: any, isActive: boolean, inactiveReason: string};
 type LineType = {obj: any, pointsOn: Set<string>};
@@ -17,10 +18,20 @@ export class BoardScheme {
 
     private perpendicularLines: [string, string][];                                 // [line 1 id, line 2 id]
     private parallelLines: [string, string][];                                      // [line 1 id, line 2 id]
-    private midPerpendiculars: [string, string, string][];                          // [segment end 1 id, segment end 2 id, line id]
-    private bisectors: [string, string, string, string][];                          // [angle end 1 id, angle vertex id, angle end 2 id, line id]
     private equalSegments: [string, string, string, string][];                      // [segment 1 end 1 id, segment 1 end 2 id, segment 2 end 1 id, segment 2 end 2 id]
     private equalAngles: [string, string, string, string, string, string,][];       // [angle 1 end 1 id, angle 1 vertex id, angle 1 end 2 id, angle 2 end 1 id, angle 2 vertex id, angle 2 end 2 id]
+    private midPerpendiculars: [string, string, string][];                          // [segment end 1 id, segment end 2 id, line id]
+    private bisectors: [string, string, string, string][];                          // [angle end 1 id, angle vertex id, angle end 2 id, line id]
+    private tangentLines: [string, string][];
+    private tangentCircles: [string, string][];
+    private circumscribedCircles: [string, string[]][];
+    private inscribedCircles: [string, string[]][];
+    private escribedCircles: [string, string, string, string][];
+    private polygonTypes: [string[], PolygonType][];
+    private medians: [string, string, string, string, string][];
+    private altitudes: [string, string, string, string, string][];
+    private midSegments: [string, string, string, string, string, string][];
+    
     private segmentLengths: [string, string, string][];                             // [segment end 1 id, segment end 2 id, string of formula]
     private angleMeasures: [string, string, string, boolean, string][];             // [angle end 1 id, angle vertex id, angle end 2 id, angle is convex, string of formula]
     private formulas: string[];                                                     // string of formula
@@ -37,11 +48,20 @@ export class BoardScheme {
 
         this.perpendicularLines = [];
         this.parallelLines = [];
-        this.midPerpendiculars = [];
-        this.bisectors = [];
-
         this.equalSegments = [];
         this.equalAngles = [];
+        this.midPerpendiculars = [];
+        this.bisectors = [];
+        this.tangentLines = [];
+        this.tangentCircles = [];
+        this.circumscribedCircles = [];
+        this.inscribedCircles = [];
+        this.escribedCircles = [];
+        this.polygonTypes = [];
+        this.medians = [];
+        this.altitudes = [];
+        this.midSegments = [];
+        
         this.segmentLengths = [];
         this.angleMeasures = [];
         this.formulas = [];
@@ -70,6 +90,16 @@ export class BoardScheme {
         (this.shapes[intersection.id] as PointType).isActive = combinedIsActive;
         if(combinedIsActive) { (this.shapes[intersection.id] as PointType).inactiveReason = ''; }
         else { (this.shapes[intersection.id] as PointType).inactiveReason = this.chooseInactiveReason(inactiveReasons); }
+    }
+
+    chooseInactiveReason(inactiveReasons: any[]): string {
+        if(inactiveReasons.length == 0) { return ''; }
+
+        for(const point of inactiveReasons) {
+            if(this.gliders.includes(point.id)) { return point.id; }
+        }
+
+        return inactiveReasons[0].id;
     }
 
     addSegment(segmentObject: any): void {
@@ -113,6 +143,14 @@ export class BoardScheme {
         this.parallelLines.push([lineObject.id, baseLineObject.id]);
     }
 
+    addEqualSegments(segment1End1Object: any, segment1End2Object: any, segment2End1Object: any, segment2End2Object: any): void {
+        this.equalSegments.push([segment1End1Object.id, segment1End2Object.id, segment2End1Object.id, segment2End2Object.id]);
+    }
+
+    addEqualAngles(angle1End1Object: any, angle1VertexObject: any, angle1End2Object: any, angle2End1Object: any, angle2VertexObject: any, angle2End2Object: any): void {
+        this.equalAngles.push([angle1End1Object.id, angle1VertexObject.id, angle1End2Object.id, angle2End1Object.id, angle2VertexObject.id, angle2End2Object.id]);
+    }
+
     addMidPerpendicular(segmentEnd1Object: any, segmentEnd2Object: any, lineObject: any): void {
         this.midPerpendiculars.push([segmentEnd1Object.id, segmentEnd2Object.id, lineObject.id]);
     }
@@ -121,12 +159,40 @@ export class BoardScheme {
         this.bisectors.push([angleEnd1Object.id, angleVertexObject.id, angleEnd2Object.id, lineObject.id]);
     }
 
-    addEqualSegments(segment1End1Object: any, segment1End2Object: any, segment2End1Object: any, segment2End2Object: any): void {
-        this.equalSegments.push([segment1End1Object.id, segment1End2Object.id, segment2End1Object.id, segment2End2Object.id]);
+    addTangentLine(circleObject: any, lineObject: any): void {
+        this.tangentLines.push([circleObject.id, lineObject.id]);
     }
 
-    addEqualAngles(angle1End1Object: any, angle1VertexObject: any, angle1End2Object: any, angle2End1Object: any, angle2VertexObject: any, angle2End2Object: any): void {
-        this.equalAngles.push([angle1End1Object.id, angle1VertexObject.id, angle1End2Object.id, angle2End1Object.id, angle2VertexObject.id, angle2End2Object.id]);
+    addTangentCircle(circle1Object: any, circle2Object: any): void {
+        this.tangentCircles.push([circle1Object.id, circle2Object.id]);
+    }
+
+    addCircumscribedCircle(circleObject: any, polygonVerticesObjects: any[]): void {
+        this.circumscribedCircles.push([circleObject.id, polygonVerticesObjects.map((vertex) => vertex.id)]);
+    }
+
+    addInscribedCircle(circleObject: any, polygonVerticesObjects: any[]): void {
+        this.inscribedCircles.push([circleObject.id, polygonVerticesObjects.map((vertex) => vertex.id)]);
+    }
+
+    addEscribedCircle(circleObject: any, polygonVerticesObjects: any[]): void {
+        this.escribedCircles.push([circleObject.id, polygonVerticesObjects[0].id, polygonVerticesObjects[1].id, polygonVerticesObjects[2].id])
+    }
+
+    addPolygonType(polygonVerticesObjects: any[], polygonType: PolygonType): void {
+        this.polygonTypes.push([polygonVerticesObjects.map((vertex) => vertex.id), polygonType]);
+    }
+
+    addMedian(topVertexObject: any, baseVertex1Object: any, baseVertex2Object: any, medianEnd1Object: any, medianEnd2Object: any): void {
+        this.medians.push([topVertexObject.id, baseVertex1Object.id, baseVertex2Object.id, medianEnd1Object.id, medianEnd2Object.id]);
+    }
+
+    addAltitude(topVertexObject: any, baseVertex1Object: any, baseVertex2Object: any, altitudeEnd1Object: any, altitudeEnd2Object: any): void {
+        this.altitudes.push([topVertexObject.id, baseVertex1Object.id, baseVertex2Object.id, altitudeEnd1Object.id, altitudeEnd2Object.id]);
+    }
+
+    addMidSegment(side1End1Object: any, side1End2Object: any, side2End1Object: any, side2End2Object: any, segmentEnd1Object: any, segmentEnd2Object: any): void {
+        this.midSegments.push([side1End1Object.id, side1End2Object.id, side2End1Object.id, side2End2Object.id, segmentEnd1Object.id, segmentEnd2Object.id]);
     }
 
     setSegmentLength(segmentEnd1Object: any, segmentEnd2Object: any, formula: string): void {
@@ -141,7 +207,44 @@ export class BoardScheme {
         this.formulas.push(formula);
     }
 
+    addPointToShape(shape: any, point: any): void {
+        (this.shapes[shape.id] as LineCircleType).pointsOn.add(point.id);
+    }
+
+    getSegementByPoints(point1Id: string, point2Id: string): [boolean, string] {
+        for(const lineId of this.segments) {
+            const line = this.shapes[lineId] as LineType;
+            if(line.pointsOn.has(point1Id) && line.pointsOn.has(point2Id)) {
+                return [true, lineId];
+            }
+        }
+
+        return [false, ''];
+    }
+
+    getRayByPoints(point1Id: string, point2Id: string): [boolean, string] {
+        for(const lineId of this.rays) {
+            const line = this.shapes[lineId] as LineType;
+            if(line.pointsOn.has(point1Id) && line.pointsOn.has(point2Id)) {
+                return [true, lineId];
+            }
+        }
+
+        return [false, ''];
+    }
+
     getLineByPoints(point1Id: string, point2Id: string): [boolean, string] {
+        for(const lineId of this.lines) {
+            const line = this.shapes[lineId] as LineType;
+            if(line.pointsOn.has(point1Id) && line.pointsOn.has(point2Id)) {
+                return [true, lineId];
+            }
+        }
+
+        return [false, ''];
+    }
+
+    getSegementOrRayOrLineByPoints(point1Id: string, point2Id: string): [boolean, string] {
         for(const lineId of [...this.segments, ...this.rays, ...this.lines]) {
             const line = this.shapes[lineId] as LineType;
             if(line.pointsOn.has(point1Id) && line.pointsOn.has(point2Id)) {
@@ -163,12 +266,8 @@ export class BoardScheme {
         return [false, ''];
     }
 
-    pointLiesOnLine(lineId: string, pointId: string): boolean {
-        return (this.shapes[lineId] as LineCircleType).pointsOn.has(pointId);
-    }
-
-    pointLiesOnCircle(circleId: string, pointId: string): boolean {
-        return (this.shapes[circleId] as LineCircleType).pointsOn.has(pointId);
+    pointLiesOnShapes(shapeId: string, pointId: string): boolean {
+        return (this.shapes[shapeId] as LineCircleType).pointsOn.has(pointId);
     }
 
     get(): BoardSchemeJson {
@@ -230,25 +329,24 @@ export class BoardScheme {
             points: pointsList,
             lines: linesList,
             circles: circlesList,
-            perpendicular: this.perpendicularLines.map((dependency) => ({ line1Id: dependency[0], line2Id: dependency[1] })),
-            parallel: this.parallelLines.map((dependency) => ({ line1Id: dependency[0], line2Id: dependency[1] })),
+            perpendicularLines: this.perpendicularLines.map((dependency) => ({ line1Id: dependency[0], line2Id: dependency[1] })),
+            parallelLines: this.parallelLines.map((dependency) => ({ line1Id: dependency[0], line2Id: dependency[1] })),
             equalSegments: this.equalSegments.map((dependency) => ({ segment1End1Id: dependency[0], segment1End2Id: dependency[1], segment2End1Id: dependency[2], segment2End2Id: dependency[3] })),
             equalAngles: this.equalAngles.map((dependency) => ({ angle1End1Id: dependency[0], angle1VertexId: dependency[1], angle1End2Id: dependency[2], angle2End1Id: dependency[3], angle2VertexId: dependency[4], angle2End2Id: dependency[5] })),
+            midPerpendiculars: this.midPerpendiculars.map((dependency) => ({ segmentEnd1Id: dependency[0], segmentEnd2Id: dependency[1], lineId: dependency[2] })),
+            bisectors: this.bisectors.map((dependency) => ({ angleEnd1Id: dependency[0], angleVertexId: dependency[1], angleEnd2Id: dependency[2], lineId: dependency[3] })),
+            tangentLines: this.tangentLines.map((dependency) => ({ circleId: dependency[0], lineId: dependency[1] })),
+            tangentCircles: this.tangentCircles.map((dependency) => ({ circle1Id: dependency[0], circle2Id: dependency[1] })),
+            circumscribedCircles: this.circumscribedCircles.map((dependency) => ({ circleId: dependency[0], polygonVerticesIds: dependency[1] })),
+            inscribedCircles: this.inscribedCircles.map((dependency) => ({ circleId: dependency[0], polygonVerticesIds: dependency[1] })),
+            escribedCircles: this.escribedCircles.map((dependency) => ({ circleId: dependency[0], polygonPoints: dependency.slice(1, 5) })),
+            polygonTypes: this.polygonTypes.map((dependency) => ({  polygonVerticesIds: dependency[0], polygonType: dependency[1] })),
+            medians: this.medians.map((dependency) => ({ polygonVerticesIds: dependency.slice(0, 3), segmentEnd1Id: dependency[3], segmentEnd2Id: dependency[4] })),
+            altitudes: this.altitudes.map((dependency) => ({ polygonVerticesIds: dependency.slice(0, 3), segmentEnd1Id: dependency[3], segmentEnd2Id: dependency[4] })),
+            midSegments: this.midSegments.map((dependency) => ({ polygonVerticesIds: dependency.slice(0, 4), segmentEnd1Id: dependency[4], segmentEnd2Id: dependency[5] })),
             segmentLengths: this.segmentLengths.map((dependency) => ({ segmentEnd1Id: dependency[0], segmentEnd2Id: dependency[1], length: dependency[2] })),
             angleMeasures: this.angleMeasures.map((dependency) => ({ angleEnd1Id: dependency[0], angleVertexId: dependency[1], angleEnd2Id: dependency[2], angleIsConvex: dependency[3], measure: dependency[4] })),
             formulas: this.formulas,
-            midPerpendicular: this.midPerpendiculars.map((dependency) => ({ segmentEnd1Id: dependency[0], segmentEnd2Id: dependency[1], lineId: dependency[2] })),
-            bisectors: this.bisectors.map((dependency) => ({ angleEnd1Id: dependency[0], angleVertexId: dependency[1], angleEnd2Id: dependency[2], lineId: dependency[3] }))
         };
-    }
-
-    chooseInactiveReason(inactiveReasons: any[]): string {
-        if(inactiveReasons.length == 0) { return ''; }
-
-        for(const point of inactiveReasons) {
-            if(this.gliders.includes(point.id)) { return point.id; }
-        }
-
-        return inactiveReasons[0].id;
     }
 }

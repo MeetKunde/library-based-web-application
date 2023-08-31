@@ -1,3 +1,5 @@
+import { PolygonType } from "./PolygonType"
+
 export interface PointJson {
     id: string,
     x: number,
@@ -22,33 +24,19 @@ export interface CircleJson {
     pointsOn: string[]
 }
 
-export interface LinesPair {
+export interface LinesPairJson {
     line1Id: string,
     line2Id: string
 }
 
-export interface SegmentLength {
-    segmentEnd1Id: string,
-    segmentEnd2Id: string,
-    length: string
-}
-
-export interface AngleMeasure {
-    angleEnd1Id: string,
-    angleVertexId: string,
-    angleEnd2Id: string,
-    angleIsConvex: boolean,
-    measure: string
-}
-
-export interface SegmentsEquality {
+export interface SegmentsPairJson {
     segment1End1Id: string,
     segment1End2Id: string,
     segment2End1Id: string,
     segment2End2Id: string
 }
 
-export interface AnglesEquality {
+export interface AnglesPairJson {
     angle1End1Id: string,
     angle1VertexId: string,
     angle1End2Id: string,
@@ -57,30 +45,93 @@ export interface AnglesEquality {
     angle2End2Id: string
 }
 
-export interface MidPerpendicular {
+export interface SegmentLineJson {
     segmentEnd1Id: string,
     segmentEnd2Id: string,
     lineId: string
 }
 
-export interface Bisector {
+export interface AngleLineJson {
     angleEnd1Id: string,
     angleVertexId: string,
     angleEnd2Id: string,
     lineId: string
 }
 
+export interface LineCircleJson {
+    lineId: string,
+    circleId: string
+}
+
+export interface CirclesPairJson {
+    circle1Id: string,
+    circle2Id: string
+}
+
+export interface CirclePolygonJson {
+    circleId: string,
+    polygonVerticesIds: string[]
+}
+
+export interface TriangleCircleJson {
+    circleId: string,
+
+}
+
+export interface PolygonTypeJson {
+    polygonVerticesIds: string[],
+    polygonType: PolygonType
+}
+
+export interface PolygonSegmentJson {
+    polygonVerticesIds: string[]
+    segmentEnd1Id: string,
+    segmentEnd2Id: string,
+}
+
+export interface SegmentsTripleJson {
+    segment1End1Id: string,
+    segment1End2Id: string,
+    segment2End1Id: string,
+    segment2End2Id: string,
+    segment3End1Id: string,
+    segment3End2Id: string
+}
+
+export interface SegmentLengthJson {
+    segmentEnd1Id: string,
+    segmentEnd2Id: string,
+    length: string
+}
+
+export interface AngleMeasureJson {
+    angleEnd1Id: string,
+    angleVertexId: string,
+    angleEnd2Id: string,
+    angleIsConvex: boolean,
+    measure: string
+}
+
 export interface BoardSchemeJson {
     points: PointJson[];
     lines: LineJson[];
     circles: CircleJson[];
-    perpendicular: LinesPair[];  
-    parallel: LinesPair[];   
-    equalSegments: SegmentsEquality[];
-    equalAngles: AnglesEquality[];
-    segmentLengths: SegmentLength[];
-    angleMeasures: AngleMeasure[];
+    perpendicularLines: LinesPairJson[];  
+    parallelLines: LinesPairJson[];   
+    equalSegments: SegmentsPairJson[];
+    equalAngles: AnglesPairJson[];
+    midPerpendiculars: SegmentLineJson[];
+    bisectors: AngleLineJson[]
+    tangentLines: LineCircleJson[];
+    tangentCircles: CirclesPairJson[];
+    circumscribedCircles: CirclePolygonJson[];
+    inscribedCircles: CirclePolygonJson[];
+    escribedCircles: TriangleCircleJson[];
+    polygonTypes: PolygonTypeJson[];
+    medians: PolygonSegmentJson[];
+    altitudes: PolygonSegmentJson[];
+    midSegments: PolygonSegmentJson[];
+    segmentLengths: SegmentLengthJson[];
+    angleMeasures: AngleMeasureJson[];
     formulas: string[];
-    midPerpendicular: MidPerpendicular[];
-    bisectors: Bisector[]
 }
