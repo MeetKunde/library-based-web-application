@@ -4,7 +4,7 @@ import { BoardSchemeJson } from "./BoardSchemeJson";
 import { Colors, Naming, Options, Sizes } from "./Config";
 import { PolygonType } from "./PolygonType";
 import { AnswearType, RequestEnum } from "./RequestEnum";
-import { distance, genRandom, isCircle, isIntersectionPoint, isLine, isPoint, xCoord, yCoord } from "./Utils";
+import { coords, distance, genRandom, isCircle, isIntersectionPoint, isLine, isPoint, xCoord, yCoord } from "./Utils";
 
 declare const JXG: any 
 
@@ -22,6 +22,7 @@ export class Board {
     private enteredFormulas: any[] = [];
     private promptingShapes: any[] = [];
     private highlightedShapes: any[] = [];
+    private currentGuideLines: [[any | null, number | null], [any | null, number | null]] = [[null, null], [null, null]];
 
     private boardScheme: BoardScheme;
 
@@ -37,7 +38,7 @@ export class Board {
         this.board = JXG.JSXGraph.initBoard(boardId, { boundingbox: bounds, maxBoundingBox: maxBounds, showcopyright: false, axis: showAxis, keepAspectRatio: keepAspectRatio });
         this.board.on('down', this.handleBoardClick);
         this.board.on('update', this.handleBoardUpdate);
-        this.board.on('move', this.drawPromptingShapes);
+        this.board.on('move', this.drawPromptingShapesAndGuideLines);
 
         this.action = ActionEnum.NONE;
         this.shapeClicked = false;
@@ -51,6 +52,7 @@ export class Board {
         this.enteredFormulas = [];
         this.promptingShapes = [];
         this.highlightedShapes = [];
+        this.currentGuideLines = [[null, null], [null, null]];
 
         this.boardScheme = new BoardScheme();
 
@@ -72,7 +74,7 @@ export class Board {
             this.action = action;   
             this.shapesAccumulator = [];
             this.highlightShapes();
-            this.drawPromptingShapes(null);
+            this.drawPromptingShapesAndGuideLines(null);
         }
     }
 
@@ -92,7 +94,6 @@ export class Board {
     }
 
     getScheme(): BoardSchemeJson {  
-        console.log(this.board.objects);
         return this.boardScheme.get();
     }
 
@@ -221,7 +222,7 @@ export class Board {
         return segment;
     }
 
-    private createPromptingSegment(point1: any, point2: [number, number]): any {
+    private createPromptingSegment(point1: any, point2: any): any {
         const segment = this.board.create('line', [point1, point2], {
             straightFirst: false,
             straightLast: false,
@@ -249,7 +250,7 @@ export class Board {
         return ray;
     }
 
-    private createPromptingRay(point1: any, point2: [number, number]): any {
+    private createPromptingRay(point1: any, point2: any): any {
         const ray = this.board.create('line', [point1, point2], { 
             straightFirst: false,
             strokeWidth: Sizes.STROKE_WIDTH,
@@ -275,7 +276,7 @@ export class Board {
         return line;
     }
 
-    private createPromptingLine(point1: any, point2: [number, number]): any {
+    private createPromptingLine(point1: any, point2: any): any {
         const line = this.board.create('line', [point1, point2], {
             strokeWidth: Sizes.STROKE_WIDTH,
             color: Colors.TERTIARY,
@@ -363,7 +364,7 @@ export class Board {
         this.correctIntersectionPoints();
     }
 
-    private createPerpendicularLine(baseLine: any, basePoint: any, noIntersectWithIds: string[] = []): any {
+    private createPerpendicularLine(baseLine: any, basePoint: any, addDependencyToScheme: boolean, noIntersectWithIds: string[] = []): any {
         const line = this.board.create('perpendicular', [baseLine, basePoint], {
             strokeWidth: Sizes.STROKE_WIDTH,
             color: Colors.PRIMARY,
@@ -371,7 +372,10 @@ export class Board {
         });
 
         line.on('down', (event: any) => { this.handleLineClick(event, line); });
-        this.boardScheme.addPerpendicularity(line, baseLine, basePoint);
+
+        this.boardScheme.addLineBasedOnOnePoint(line, basePoint);
+        if(addDependencyToScheme) { this.boardScheme.addPerpendicularity(line, baseLine, basePoint); }
+
         noIntersectWithIds.forEach((id) => this.noIntersect.push([line.id, id]));
         this.createIntersectionPoints(line);
 
@@ -388,7 +392,7 @@ export class Board {
         return line;
     }
 
-    private createParallelLine(baseLine: any, basePoint: any, noIntersectWithIds: string[] = []): any {
+    private createParallelLine(baseLine: any, basePoint: any, addDependencyToScheme: boolean, noIntersectWithIds: string[] = []): any {
         const line = this.board.create('parallel', [baseLine, basePoint], {
             strokeWidth: Sizes.STROKE_WIDTH,
             color: Colors.PRIMARY,
@@ -396,7 +400,10 @@ export class Board {
         });
 
         line.on('down', (event: any) => { this.handleLineClick(event, line); });
-        this.boardScheme.addParallelism(line, baseLine, basePoint);
+
+        this.boardScheme.addLineBasedOnOnePoint(line, basePoint);
+        if(addDependencyToScheme) { this.boardScheme.addParallelism(line, baseLine, basePoint); }
+
         noIntersectWithIds.forEach((id) => this.noIntersect.push([line.id, id]));
         this.createIntersectionPoints(line);
 
@@ -543,7 +550,7 @@ export class Board {
         const points = this.divideSegment(baseSegmentEnds, 2, false);
         const segmentSearch = this.boardScheme.getSegementOrRayOrLineByPoints(baseSegmentEnds[0].id, baseSegmentEnds[1].id);
         const segment = this.board.objects[segmentSearch[1]];
-        const line = this.createPerpendicularLine(segment, points[1]);
+        const line = this.createPerpendicularLine(segment, points[1], false);
 
         this.boardScheme.addMidPerpendicular(baseSegmentEnds[0], baseSegmentEnds[1], line);
         return line;
@@ -646,7 +653,7 @@ export class Board {
 
         const circle = this.createCircle(center, polygonPoints[0]);
         this.boardScheme.addCircumscribedCircle(circle, polygonPoints);
-
+        polygonPoints.forEach((point) => this.boardScheme.addPointToShape(circle, point));
         return circle;
     }
 
@@ -693,16 +700,22 @@ export class Board {
         }
 
         for(let i = 0; i < polygonPoints.length; i++) {
-            pointsOnSides.push(this.createPointFunCoord(function() {
+            const newPoint = this.createPointFunCoord(function() {
                 const side = getSegment(polygonPoints[i], polygonPoints[(i+1)%polygonPoints.length]);
                 noIntersectWith.push(side.id);
                 const pointProjection = JXG.Math.Geometry.projectPointToLine(center, side);
                 return pointProjection.usrCoords;
-            }));        
+            });    
+
+            const side = getSegment(polygonPoints[i], polygonPoints[(i+1)%polygonPoints.length]);
+            pointsOnSides.push(newPoint);
+            this.boardScheme.addPointToShape(side, newPoint);
+            
         }
 
         const circle = this.createCircle(center, pointsOnSides[0], noIntersectWith);
         this.boardScheme.addInscribedCircle(circle, polygonPoints);
+        pointsOnSides.forEach((point) => this.boardScheme.addPointToShape(circle, point));
 
         return circle;
     }
@@ -751,7 +764,14 @@ export class Board {
         });
 
         const circle = this.createCircle(center, sideSpotPoint, [side.id, ray1.id, ray2.id]);
+
         this.boardScheme.addEscribedCircle(circle, trianglePoints);
+        this.boardScheme.addPointToShape(circle, ray1SpotPoint);
+        this.boardScheme.addPointToShape(ray1, ray1SpotPoint);
+        this.boardScheme.addPointToShape(circle, ray2SpotPoint);
+        this.boardScheme.addPointToShape(ray2, ray2SpotPoint);
+        this.boardScheme.addPointToShape(circle, sideSpotPoint);
+        this.boardScheme.addPointToShape(side, sideSpotPoint);
 
         return circle;
     }
@@ -776,7 +796,8 @@ export class Board {
         });
 
         const altitude = this.createSegment(vertexPoint, spotPoint);
-        this.boardScheme.addMedian(vertexPoint, ...basePoints, vertexPoint, spotPoint);
+        this.markRightAngle(vertexPoint, spotPoint, basePoints[0]);
+        this.boardScheme.addAltitude(vertexPoint, ...basePoints, vertexPoint, spotPoint);
 
         return altitude;
     }
@@ -792,12 +813,12 @@ export class Board {
 
     private createTrianglePointsRequestData(vertex1: any, vertex2: any): void {
         this.requestDataFromUser(RequestEnum.TRIANGLE_TYPE, (data) => {
-            const castedData = data as { triangleType: PolygonType.SCALENE_ACUTE_TRIANGLE | PolygonType.SCALENE_RIGHT_TRIANGLE | PolygonType.EQUILATERAL_TRIANGLE | PolygonType.ISOSCELES_ACUTE_TRIANGLE | PolygonType.ISOSCELES_RIGHT_TRIANGLE | PolygonType.OBTUSE_SCALENE_TRIANGLE | PolygonType.OBTUSE_ISOSCELES_TRIANGLE};
+            const castedData = data as { triangleType: /*PolygonType.SCALENE_ACUTE_TRIANGLE |*/ PolygonType.SCALENE_RIGHT_TRIANGLE | PolygonType.EQUILATERAL_TRIANGLE | PolygonType.ISOSCELES_ACUTE_TRIANGLE | PolygonType.ISOSCELES_RIGHT_TRIANGLE | /*PolygonType.OBTUSE_SCALENE_TRIANGLE |*/ PolygonType.OBTUSE_ISOSCELES_TRIANGLE};
 
             switch(castedData.triangleType) {
-                case PolygonType.SCALENE_ACUTE_TRIANGLE:
-                    this.createScaleneAcuteTrianglePoints(vertex1, vertex2);
-                    break;
+                //case PolygonType.SCALENE_ACUTE_TRIANGLE:
+                //    this.createScaleneAcuteTrianglePoints(vertex1, vertex2);  
+                //    break;
                 case PolygonType.SCALENE_RIGHT_TRIANGLE:
                     this.createScaleneRightTrianglePoints(vertex1, vertex2);
                     break;
@@ -810,9 +831,9 @@ export class Board {
                 case PolygonType.ISOSCELES_RIGHT_TRIANGLE:
                     this.createIsoscelesRightTrianglePoints(vertex1, vertex2);
                     break;
-                case PolygonType.OBTUSE_SCALENE_TRIANGLE:
-                    this.createObtuseScaleneTrianglePoints(vertex1, vertex2);
-                    break;
+                //case PolygonType.OBTUSE_SCALENE_TRIANGLE:
+                //    this.createObtuseScaleneTrianglePoints(vertex1, vertex2);
+                //    break;
                 case PolygonType.OBTUSE_ISOSCELES_TRIANGLE:
                     this.createObtuseIsoscelesTrianglePoints(vertex1, vertex2);
                     break;
@@ -823,13 +844,30 @@ export class Board {
         });
     }
 
-    private createScaleneAcuteTrianglePoints(vertex1: any, vertex2: any): [any, any, any] {
-        const d = distance(vertex1, vertex2);
-        return [vertex1, vertex2, vertex1];
-    }
+    //private createScaleneAcuteTrianglePoints(vertex1: any, vertex2: any): [any, any, any] {
+    //    const d = distance(vertex1, vertex2);
+    //    return [vertex1, vertex2, vertex1];
+    //}
 
     private createScaleneRightTrianglePoints(vertex1: any, vertex2: any): [any, any, any] {
-        return [vertex1, vertex1, vertex1];
+        const guideLine = this.board.create('curve', [
+            function(t: number) { 
+                const r = distance(vertex1, vertex2) / 2;
+                return (xCoord(vertex1) + xCoord(vertex2)) / 2 + r * Math.cos(t); 
+            }, 
+            function(t: number) { 
+                const r = distance(vertex1, vertex2) / 2;
+                return (yCoord(vertex1) + yCoord(vertex2)) / 2 + r * Math.sin(t); 
+            }
+        ], 
+        { visible: false });
+
+        const vertex3 = this.createSlidingPoint(0, 0, guideLine);
+        this.markRightAngle(vertex1, vertex3, vertex2);
+
+        this.boardScheme.addPolygonType([vertex1, vertex2, vertex3], PolygonType.SCALENE_RIGHT_TRIANGLE);
+
+        return [vertex1, vertex2, vertex3];
     }
 
     private createEquilateralTrianglePoints(vertex1: any, vertex2: any): [any, any, any] {
@@ -838,49 +876,73 @@ export class Board {
             return vertex3Coords.usrCoords;
         });
 
+        this.boardScheme.addPolygonType([vertex1, vertex2, vertex3], PolygonType.EQUILATERAL_TRIANGLE);
+
         return [vertex1, vertex2, vertex3];
     }
 
     private createIsoscelesAcuteTrianglePoints(vertex1: any, vertex2: any): [any, any, any] {
         const guideLine = this.board.create('curve', [
             function(t: number) {
-                return t; 
+                return t;
             }, 
             function(t: number) { 
                 const xMid = (xCoord(vertex1) + xCoord(vertex2)) / 2;
                 const yMid = (yCoord(vertex1) + yCoord(vertex2)) / 2;
                 
-                const epsilon = 0.1;
                 const dx: number = xCoord(vertex2) - xCoord(vertex1);
                 const dy: number = yCoord(vertex2) - yCoord(vertex1);
 
-                if(Math.abs(dx) < epsilon) { Math.sign(dx) * epsilon; }
-                const a = dy / dx;
-                const aPerpendicular = -1 / a;
+                const aPerpendicular = -dx / dy;
                 const bPerpendicular = yMid - aPerpendicular * xMid;
-
-                return aPerpendicular * t + bPerpendicular; 
+                
+                return aPerpendicular * t + bPerpendicular;
             }
         ], 
-        {
-            visible: false
-        });
+        { visible: false });
         
         const vertex3 = this.createSlidingPoint(0, 0, guideLine);
 
+        this.boardScheme.addPolygonType([vertex1, vertex2, vertex3], PolygonType.ISOSCELES_ACUTE_TRIANGLE);
+       
         return [vertex1, vertex2, vertex3];
     }
 
     private createIsoscelesRightTrianglePoints(vertex1: any, vertex2: any): [any, any, any] {
-        return [vertex1, vertex1, vertex1];
+        const vertex3 = this.createPointFunCoord(function() {
+            const newPointCoords = JXG.Math.Geometry.rotation(vertex1, vertex2, Math.PI / 2);
+            return newPointCoords.usrCoords;
+        });
+
+        this.markRightAngle(vertex3, vertex1, vertex2);
+
+        this.boardScheme.addPolygonType([vertex1, vertex2, vertex3], PolygonType.ISOSCELES_RIGHT_TRIANGLE);
+
+        return [vertex1, vertex2, vertex3];
     }
 
-    private createObtuseScaleneTrianglePoints(vertex1: any, vertex2: any): [any, any, any] {
-        return [vertex1, vertex1, vertex1];
-    }
+    //private createObtuseScaleneTrianglePoints(vertex1: any, vertex2: any): [any, any, any] {
+    //    return [vertex1, vertex1, vertex1];
+    //}
     
     private createObtuseIsoscelesTrianglePoints(vertex1: any, vertex2: any): [any, any, any] {
-        return [vertex1, vertex1, vertex1];
+        const guideLine = this.board.create('curve', [
+            function(t: number) { 
+                const r = distance(vertex1, vertex2);
+                return xCoord(vertex1) + r * Math.cos(t); 
+            }, 
+            function(t: number) { 
+                const r = distance(vertex1, vertex2);
+                return yCoord(vertex1) + r * Math.sin(t); 
+            }
+        ], 
+        { visible: false });
+
+        const vertex3 = this.createSlidingPoint(0, 0, guideLine);
+
+        this.boardScheme.addPolygonType([vertex1, vertex2, vertex3], PolygonType.OBTUSE_ISOSCELES_TRIANGLE);
+
+        return [vertex1, vertex2, vertex3];
     }
 
     private createSquarePoints(vertex1: any, vertex2: any): [any, any, any, any] {
@@ -904,6 +966,8 @@ export class Board {
             return newUsrCoords;
         });
 
+        this.boardScheme.addPolygonType([vertex1, vertex2, vertex3, vertex4], PolygonType.SQUARE);
+
         return [vertex1, vertex2, vertex3, vertex4];
     }
 
@@ -918,9 +982,7 @@ export class Board {
                 return yCoord(vertex1) - t * dx; 
             }
         ], 
-        {
-            visible: false
-        });
+        { visible: false });
 
         const dx = xCoord(vertex1) - xCoord(vertex2);
         const dy = yCoord(vertex1) - yCoord(vertex2);
@@ -935,6 +997,8 @@ export class Board {
 
             return newUsrCoords;
         }); 
+
+        this.boardScheme.addPolygonType([vertex1, vertex2, vertex3, vertex4], PolygonType.RECTANGLE);
 
         return [vertex1, vertex2, vertex3, vertex4];
     }
@@ -951,6 +1015,8 @@ export class Board {
                 return newPointCoords.usrCoords;
             }));
         }
+
+        this.boardScheme.addPolygonType(vertices, PolygonType.REGULAR_POLYGON);
 
         return vertices;
     }
@@ -973,6 +1039,8 @@ export class Board {
             return newUsrCoords;
         });
 
+        this.boardScheme.addPolygonType([vertex1, vertex2, vertex3, vertex4], PolygonType.PARALLELOGRAM);
+
         return [vertex1, vertex2, vertex3, vertex4];
     }
 
@@ -989,6 +1057,8 @@ export class Board {
             return newUsrCoords;
         });
 
+        this.boardScheme.addPolygonType([vertex1, vertex2, vertex3, vertex4], PolygonType.KITE);
+
         return [vertex1, vertex2, vertex3, vertex4];
     }
 
@@ -1003,9 +1073,7 @@ export class Board {
                 return yCoord(vertex2) + r * Math.sin(t); 
             }
         ], 
-        {
-            visible: false
-        });
+        { visible: false });
 
         const vertex3 = this.createSlidingPoint(0, 0, guideLine);
 
@@ -1018,6 +1086,8 @@ export class Board {
 
             return newUsrCoords;
         });
+
+        this.boardScheme.addPolygonType([vertex1, vertex2, vertex3, vertex4], PolygonType.RHOMBUS);
 
         return [vertex1, vertex2, vertex3, vertex4];
     }
@@ -1044,26 +1114,30 @@ export class Board {
     }
 
     private createScaleneTrapezoidPoints(vertex1: any, vertex2: any, vertex3: any): [any, any, any, any] {
-        // it creates isosceles trapezoid
-        // top base includes vertex1 and vertex2
+        const guideLine = this.board.create('curve', [
+            function(t: number) {
+                return t;
+            }, 
+            function(t: number) {                 
+                const dx: number = xCoord(vertex2) - xCoord(vertex1);
+                const dy: number = yCoord(vertex2) - yCoord(vertex1);
 
-        const vertex4 = this.createPointFunCoord(function() {
-            const dx = xCoord(vertex3) - xCoord(vertex2);
-            const dy = yCoord(vertex3) - yCoord(vertex2);
-            var newUsrCoords: [number, number, number] = [...vertex1.coords.usrCoords] as [number, number, number];
-            newUsrCoords[1] -= dx;
-            newUsrCoords[2] += dy;
+                const aParallel = dy / dx;
+                const bParallel = yCoord(vertex3) - aParallel * xCoord(vertex3);
+                
+                return aParallel * t + bParallel;
+            }
+        ], 
+        { visible: false });
+        
+        const vertex4 = this.createSlidingPoint(0, 0, guideLine);
 
-            return newUsrCoords;
-        });
+        this.boardScheme.addPolygonType([vertex1, vertex2, vertex3, vertex4], PolygonType.SCALENE_TRAPEZOID);
 
         return [vertex1, vertex2, vertex3, vertex4];
     }
 
     private createIsoscelesTrapezoidPoints(vertex1: any, vertex2: any, vertex3: any): [any, any, any, any] {
-        // it creates isosceles trapezoid
-        // top base includes vertex1 and vertex2
-
         const vertex4 = this.createPointFunCoord(function() {
             const dx = xCoord(vertex3) - xCoord(vertex2);
             const dy = yCoord(vertex3) - yCoord(vertex2);
@@ -1073,23 +1147,50 @@ export class Board {
 
             return newUsrCoords;
         });
+
+        this.markEqualSegments([[vertex2, vertex3], [vertex4, vertex1]]);
+        this.boardScheme.addPolygonType([vertex1, vertex2, vertex3, vertex4], PolygonType.ISOSCELES_TRAPEZOID);
 
         return [vertex1, vertex2, vertex3, vertex4];
     }
 
     private createRightTrapezoidPoints(vertex1: any, vertex2: any, vertex3: any): [any, any, any, any] {
-        // it creates isosceles trapezoid
-        // top base includes vertex1 and vertex2
+        const secondBase = this.board.create('curve', [
+            function(t: number) { 
+               return t;
+            }, 
+            function(t: number) { 
+                const dx: number = xCoord(vertex2) - xCoord(vertex1);
+                const dy: number = yCoord(vertex2) - yCoord(vertex1);
+
+                const aParallel = dy / dx;
+                const bParallel = yCoord(vertex3) - aParallel * xCoord(vertex3);
+                
+                return aParallel * t + bParallel;
+            }
+        ], 
+        { visible: false });
 
         const vertex4 = this.createPointFunCoord(function() {
-            const dx = xCoord(vertex3) - xCoord(vertex2);
-            const dy = yCoord(vertex3) - yCoord(vertex2);
-            var newUsrCoords: [number, number, number] = [...vertex1.coords.usrCoords] as [number, number, number];
-            newUsrCoords[1] -= dx;
-            newUsrCoords[2] += dy;
+            secondBase.Y = function(t: number) { 
+                const dx: number = xCoord(vertex2) - xCoord(vertex1);
+                const dy: number = yCoord(vertex2) - yCoord(vertex1);
 
-            return newUsrCoords;
+                const aParallel = dy / dx;
+                const bParallel = yCoord(vertex3) - aParallel * xCoord(vertex3);
+                
+                return aParallel * t + bParallel;
+            }
+
+            var projection = JXG.Math.Geometry.projectPointToCurve(vertex1, secondBase);
+
+            return projection[0];
         });
+
+        this.markRightAngle(vertex4, vertex1, vertex2);
+        this.markRightAngle(vertex3, vertex4, vertex1);
+
+        this.boardScheme.addPolygonType([vertex1, vertex2, vertex3, vertex4], PolygonType.RIGHT_TRAPEZOID);
 
         return [vertex1, vertex2, vertex3, vertex4];
     }
@@ -1216,48 +1317,124 @@ export class Board {
         }
     }
 
-    private drawPromptingShapes = (event: any): void => {
+    private markRightAngle(vertex1: any, vertex2: any, vertex3: any): void {
+        const rand = genRandom(0.9, 1.1);
+        var rightAngle = this.board.create('angle', [vertex1, vertex2, vertex3], { 
+            type: 'square',
+            radius: function() { 
+                return 0.2 * rand * Math.min(distance(vertex1, vertex2), distance(vertex2, vertex3));
+            },
+            strokeWidth: Sizes.TICK_WIDTH,
+            strokeColor: Colors.TERTIARY,
+            highlightStrokeWidth: Sizes.TICK_WIDTH,
+            highlightStrokeColor: Colors.TERTIARY,
+            fillColor: 'none',
+            highlightFillColor: 'none',
+            orthoSensitivity: true,
+            selection: 'minor',
+            label: { visible: false },
+        });
+    }
+
+    private drawPromptingShapesAndGuideLines = (event: any): void => {
         this.promptingShapes.forEach((shape) => this.board.removeObject(shape));
         this.promptingShapes = [];
-
+        
         if(event === null) { return; }
 
+        this.currentGuideLines.forEach((line) => { if(line[0] !== null) { this.board.removeObject(line[0]); } });
+        this.currentGuideLines = [[null, null], [null, null]];
+
         const mouseCoords = this.board.getUsrCoordsOfMouse(event);
+        
+        var closestPointXObj = null;
+        var closestPointXVal = Number.POSITIVE_INFINITY;
+        var closestPointYObj = null;
+        var closestPointYVal = Number.POSITIVE_INFINITY;
 
-        /*
-        const boundingbox = this.board.getBoundingBox();
-        if(mouseCoords[0] < 0.98 * boundingbox[0]) {
-            return;
-        }
-        if(mouseCoords[0] > 0.98 * boundingbox[2]) {
-            return;
-        }
-        if(mouseCoords[1] > 0.98 * boundingbox[1]) {
-            return;
-        }
-        if(mouseCoords[1] < 0.98 * boundingbox[3]) {
-            return;
-        }
-        */
+        for(let objKey in this.board.objects) {
+            const obj = this.board.objects[objKey]
+            if(isPoint(obj) || isIntersectionPoint(obj)) {
+                const distX = Math.abs(mouseCoords[0] - xCoord(obj));
+                const distY = Math.abs(mouseCoords[1] - yCoord(obj));
+                
+                if(distX < closestPointXVal) {
+                    closestPointXObj = obj;
+                    closestPointXVal = distX;
+                }
 
+                if(distY < closestPointYVal) {
+                    closestPointYObj = obj;
+                    closestPointYVal = distY;
+                }
+            }
+        }
+        
+        if(closestPointXVal < Sizes.GUIDE_LINE_OFFSET) {
+            this.currentGuideLines[0][0] = this.board.create('curve', [
+                function(t: any) { return xCoord(closestPointXObj!); }, 
+                function(t: any) { return t; }
+            ],
+            { 
+                straightFirst: false,
+                strokeWidth: Sizes.STROKE_WIDTH / 2,
+                color: Colors.TERTIARY,
+                highlightStrokeColor: Colors.TERTIARY,
+                dash: 5,
+                fixed: true
+            });
+            
+            this.currentGuideLines[0][1] = xCoord(closestPointXObj!);
+        }
+
+        if(closestPointYVal < Sizes.GUIDE_LINE_OFFSET) {
+            this.currentGuideLines[1][0] = this.board.create('curve', [
+                function(t: any) { return t; }, 
+                function(t: any) { return yCoord(closestPointYObj!); }
+            ],
+            { 
+                straightFirst: false,
+                strokeWidth: Sizes.STROKE_WIDTH / 2,
+                color: Colors.TERTIARY,
+                highlightStrokeColor: Colors.TERTIARY,
+                dash: 5,
+                fixed: true
+            });
+
+            this.currentGuideLines[1][1] = yCoord(closestPointYObj!);
+        }
+        
+        if(this.currentGuideLines[0][0] !== null) { mouseCoords[0] = this.currentGuideLines[0][1]; }
+        if(this.currentGuideLines[1][0] !== null) { mouseCoords[1] = this.currentGuideLines[1][1]; }
+        
         if(this.action == ActionEnum.CREATE_SEGMENT && this.shapesAccumulator.length == 1) {
-            this.promptingShapes.push(this.createPromptingSegment(this.shapesAccumulator[0], mouseCoords));
+            const point = this.createPromptingPoint(mouseCoords[0], mouseCoords[1]);
+            this.promptingShapes.push(point);
+            this.promptingShapes.push(this.createPromptingSegment(this.shapesAccumulator[0], point));
         }
         else if(this.action == ActionEnum.CREATE_LINE && this.shapesAccumulator.length == 1) {
-            this.promptingShapes.push(this.createPromptingLine(this.shapesAccumulator[0], mouseCoords));
+            const point = this.createPromptingPoint(mouseCoords[0], mouseCoords[1]);
+            this.promptingShapes.push(point);
+            this.promptingShapes.push(this.createPromptingLine(this.shapesAccumulator[0], point));
         }
         else if(this.action == ActionEnum.CREATE_RAY && this.shapesAccumulator.length == 1) {
-            this.promptingShapes.push(this.createPromptingRay(this.shapesAccumulator[0], mouseCoords));
+            const point = this.createPromptingPoint(mouseCoords[0], mouseCoords[1]);
+            this.promptingShapes.push(point);
+            this.promptingShapes.push(this.createPromptingRay(this.shapesAccumulator[0], point));
         }
         else if(this.action == ActionEnum.CREATE_CIRCLE && this.shapesAccumulator.length == 1) {
-            this.promptingShapes.push(this.createPromptingCircle(this.shapesAccumulator[0], mouseCoords));
+            const point = this.createPromptingPoint(mouseCoords[0], mouseCoords[1]);
+            this.promptingShapes.push(point);
+            this.promptingShapes.push(this.createPromptingCircle(this.shapesAccumulator[0], point));
         }
         else if(this.action == ActionEnum.CREATE_PERPENDICULAR_LINE && this.shapesAccumulator.length == 1) {
             const point = this.createPromptingPoint(mouseCoords[0], mouseCoords[1]);
+            this.promptingShapes.push(point);
             this.promptingShapes.push(this.createPromptingPerpendicularLine(this.shapesAccumulator[0], point));
         }
         else if(this.action == ActionEnum.CREATE_PARALLEL_LINE && this.shapesAccumulator.length == 1) {
             const point = this.createPromptingPoint(mouseCoords[0], mouseCoords[1]);
+            this.promptingShapes.push(point);
             this.promptingShapes.push(this.createPromptingParallelLine(this.shapesAccumulator[0], point));
         }
     }
@@ -1273,7 +1450,7 @@ export class Board {
         this.board.update();
     }
     
-    private handleBoardClick = (event: any): void => {        
+    private handleBoardClick = (event: any): void => {    
         if(this.shapeClicked) {
             this.shapeClicked = false;
             return;
@@ -1282,12 +1459,15 @@ export class Board {
             this.shapeClicked = false;
         }
 
-        const coords = this.getCoords(event);
+        var coords = this.getCoords(event);
+        if(this.currentGuideLines[0][0] !== null) { coords[0] = this.currentGuideLines[0][1]!; }
+        if(this.currentGuideLines[1][0] !== null) { coords[1] = this.currentGuideLines[1][1]!; }
+
         const x = coords[0];
         const y = coords[1];
         const canBeCreated = coords[2];
         const duplicationPoint = coords[3];
-        
+
         switch(this.action) {
             case ActionEnum.CREATE_POINT:
                 if(canBeCreated) { this.createPoint(x, y); }
@@ -1363,11 +1543,14 @@ export class Board {
             this.shapeClicked = true;
         }
 
-        const coords = this.getCoords(event);
-        const x = coords[0];
-        const y = coords[1];
-        const canBeCreated = coords[2];
-        const duplicationPoint = coords[3];
+        var coords = this.getCoords(event);
+        //if(this.currentGuideLines[0][0] !== null) { coords[0] = this.currentGuideLines[0][1]!; }
+        //if(this.currentGuideLines[1][0] !== null) { coords[1] = this.currentGuideLines[1][1]!; }
+
+        //const x = coords[0];
+        //const y = coords[1];
+        //const canBeCreated = coords[2];
+        //const duplicationPoint = coords[3];
 
         switch(this.action) {
             case ActionEnum.CREATE_POINT:
@@ -1419,7 +1602,7 @@ export class Board {
             default:
                 return;
         }
-        
+
         this.processAccumulator();
     }
 
@@ -1437,7 +1620,10 @@ export class Board {
             this.shapeClicked = true;
         }
 
-        const coords = this.getCoords(event);
+        var coords = this.getCoords(event);
+        if(this.currentGuideLines[0][0] !== null) { coords[0] = this.currentGuideLines[0][1]!; }
+        if(this.currentGuideLines[1][0] !== null) { coords[1] = this.currentGuideLines[1][1]!; }
+
         const x = coords[0];
         const y = coords[1];
         const canBeCreated = coords[2];
@@ -1535,7 +1721,10 @@ export class Board {
             this.shapeClicked = true;
         }
 
-        const coords = this.getCoords(event);
+        var coords = this.getCoords(event);
+        if(this.currentGuideLines[0][0] !== null) { coords[0] = this.currentGuideLines[0][1]!; }
+        if(this.currentGuideLines[1][0] !== null) { coords[1] = this.currentGuideLines[1][1]!; }
+
         const x = coords[0];
         const y = coords[1];
         const canBeCreated = coords[2];
@@ -1660,13 +1849,13 @@ export class Board {
                 break;
             case ActionEnum.CREATE_PERPENDICULAR_LINE:
                 if(this.shapesAccumulator.length == 2) { 
-                    this.createPerpendicularLine(this.shapesAccumulator[0], this.shapesAccumulator[1]); 
+                    this.createPerpendicularLine(this.shapesAccumulator[0], this.shapesAccumulator[1], true); 
                     this.shapesAccumulator = [];
                 }
                 break;
             case ActionEnum.CREATE_PARALLEL_LINE:
                 if(this.shapesAccumulator.length == 2) { 
-                    this.createParallelLine(this.shapesAccumulator[0], this.shapesAccumulator[1]); 
+                    this.createParallelLine(this.shapesAccumulator[0], this.shapesAccumulator[1], true); 
                     this.shapesAccumulator = [];
                 }
                 break;
@@ -1831,9 +2020,12 @@ export class Board {
         }
 
         this.highlightShapes();
+        this.drawPromptingShapesAndGuideLines(null);
     }
 
     private pointsRecur(points: any[]): boolean {
+        if(points.length < 2) { return false; }
+
         const lastPointId = points[points.length - 1].id;
 
         return points.filter((point) => point.id == lastPointId).length > 1;

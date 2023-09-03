@@ -22,6 +22,10 @@ export function yCoord(point: any): number {
     return point.coords.usrCoords[2];
 }
 
+export function coords(point: any): [number, number] {
+    return [xCoord(point), yCoord(point)];
+}
+
 export function distance(point1: any, point2: any): number {
     const dx = point1.coords.usrCoords[1] - point2.coords.usrCoords[1];
     const dy = point1.coords.usrCoords[2] - point2.coords.usrCoords[2];

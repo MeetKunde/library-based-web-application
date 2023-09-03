@@ -22,15 +22,15 @@ export class BoardScheme {
     private equalAngles: [string, string, string, string, string, string,][];       // [angle 1 end 1 id, angle 1 vertex id, angle 1 end 2 id, angle 2 end 1 id, angle 2 vertex id, angle 2 end 2 id]
     private midPerpendiculars: [string, string, string][];                          // [segment end 1 id, segment end 2 id, line id]
     private bisectors: [string, string, string, string][];                          // [angle end 1 id, angle vertex id, angle end 2 id, line id]
-    private tangentLines: [string, string][];
-    private tangentCircles: [string, string][];
-    private circumscribedCircles: [string, string[]][];
-    private inscribedCircles: [string, string[]][];
-    private escribedCircles: [string, string, string, string][];
-    private polygonTypes: [string[], PolygonType][];
-    private medians: [string, string, string, string, string][];
-    private altitudes: [string, string, string, string, string][];
-    private midSegments: [string, string, string, string, string, string][];
+    private tangentLines: [string, string][];                                       // [circle id, line id]
+    private tangentCircles: [string, string][];                                     // [circle 1 id, circle 2 id]
+    private circumscribedCircles: [string, string[]][];                             // [circle id, array of polygon vertices ids]
+    private inscribedCircles: [string, string[]][];                                 // [circle id, array of polygon vertices ids]
+    private escribedCircles: [string, string, string, string][];                    // [circle id, triangle vertex 1 id, triangle vertex 2 id, triangle vertex 3 id]
+    private polygonTypes: [string[], PolygonType][];                                // [array of polygon vertices ids, polygon type enum]
+    private medians: [string, string, string, string, string][];                    // [triangle top vertex id, triangle base end 1 id, triangle base end 2 id, median end 1 id, median end 2 id]
+    private altitudes: [string, string, string, string, string][];                  // [triangle top vertex id, triangle base end 1 id, triangle base end 2 id, altitude end 1 id, altitude end 2 id]
+    private midSegments: [string, string, string, string, string, string][];        // [side 1 end 1 id, side1 end 2 id, side 2 end 1 id, side 2 end 2 id, midSegment end 1 id, midSegment end 2 id]
     
     private segmentLengths: [string, string, string][];                             // [segment end 1 id, segment end 2 id, string of formula]
     private angleMeasures: [string, string, string, boolean, string][];             // [angle end 1 id, angle vertex id, angle end 2 id, angle is convex, string of formula]
@@ -123,6 +123,12 @@ export class BoardScheme {
         (this.shapes[lineObject.id] as LineType).pointsOn.add(lineObject.inherits[1].id);
     }
 
+    addLineBasedOnOnePoint(lineObject: any, basePointObject: any): void {
+        this.lines.push(lineObject.id);
+        this.shapes[lineObject.id] = { obj: lineObject, pointsOn: new Set() };
+        (this.shapes[lineObject.id] as LineType).pointsOn.add(basePointObject.id);
+    }
+
     addCircle(circleObject: any): void {
         this.circles.push(circleObject.id);
         this.shapes[circleObject.id] = { obj: circleObject, center: circleObject.inherits[0].id, pointsOn: new Set() };
@@ -130,16 +136,10 @@ export class BoardScheme {
     }
 
     addPerpendicularity(lineObject: any, baseLineObject: any, basePointObject: any): void {
-        this.lines.push(lineObject.id);
-        this.shapes[lineObject.id] = { obj: lineObject, pointsOn: new Set() };
-        (this.shapes[lineObject.id] as LineType).pointsOn.add(basePointObject.id);
         this.perpendicularLines.push([lineObject.id, baseLineObject.id]);
     }
 
     addParallelism(lineObject: any, baseLineObject: any, basePointObject: any): void {
-        this.lines.push(lineObject.id);
-        this.shapes[lineObject.id] = { obj: lineObject, pointsOn: new Set() };
-        (this.shapes[lineObject.id] as LineType).pointsOn.add(basePointObject.id);
         this.parallelLines.push([lineObject.id, baseLineObject.id]);
     }
 
@@ -271,7 +271,6 @@ export class BoardScheme {
     }
 
     get(): BoardSchemeJson {
-        console.log(this.shapes)
         var pointsList: PointJson[] = [];
         for(const pointId of [...this.points, ...this.gliders, ...this.intersections]) {
             const point = this.shapes[pointId] as PointType;

@@ -4,7 +4,7 @@ import { PolygonType } from '../board/PolygonType';
 
 export interface TriangleType {
   name: string;
-  type: PolygonType.SCALENE_ACUTE_TRIANGLE | PolygonType.SCALENE_RIGHT_TRIANGLE | PolygonType.EQUILATERAL_TRIANGLE | PolygonType.ISOSCELES_ACUTE_TRIANGLE | PolygonType.ISOSCELES_RIGHT_TRIANGLE | PolygonType.OBTUSE_SCALENE_TRIANGLE | PolygonType.OBTUSE_ISOSCELES_TRIANGLE;
+  type: /*PolygonType.SCALENE_ACUTE_TRIANGLE |*/ PolygonType.SCALENE_RIGHT_TRIANGLE | PolygonType.EQUILATERAL_TRIANGLE | PolygonType.ISOSCELES_ACUTE_TRIANGLE | PolygonType.ISOSCELES_RIGHT_TRIANGLE | /*PolygonType.OBTUSE_SCALENE_TRIANGLE |*/ PolygonType.OBTUSE_ISOSCELES_TRIANGLE;
   state: boolean;
 }
 
@@ -27,12 +27,12 @@ export interface TriangleType {
 })
 export class SelectTriangleTypeDialogComponent {
   availableTypes: TriangleType[] = [
-    {name: 'Scalene & Acute', type: PolygonType.SCALENE_ACUTE_TRIANGLE, state: true},
+//    {name: 'Scalene & Acute', type: PolygonType.SCALENE_ACUTE_TRIANGLE, state: true},
     {name: 'Scalene & Right', type: PolygonType.SCALENE_RIGHT_TRIANGLE, state: false},
     {name: 'Equilateral', type: PolygonType.EQUILATERAL_TRIANGLE, state: false},
     {name: 'Isosceles & Acute', type: PolygonType.ISOSCELES_ACUTE_TRIANGLE, state: false},
     {name: 'Isosceles & Right', type: PolygonType.ISOSCELES_RIGHT_TRIANGLE, state: false},
-    {name: 'Scalene & Obtuse', type: PolygonType.OBTUSE_SCALENE_TRIANGLE, state: false},
+//    {name: 'Scalene & Obtuse', type: PolygonType.OBTUSE_SCALENE_TRIANGLE, state: false},
     {name: 'Isosceles & Obtuse', type: PolygonType.OBTUSE_ISOSCELES_TRIANGLE, state: false},
   ];
 
