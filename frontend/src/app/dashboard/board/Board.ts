@@ -20,9 +20,9 @@ export class Board {
     private segmentHatchesCounter = 0;
     private anglesHatchesCounter = 0;
     private enteredFormulas: any[] = [];
-    private promptingShapes: any[] = [];
+    private promptingShapes: { [type: string]: any };
     private highlightedShapes: any[] = [];
-    private currentGuideLines: [[any | null, number | null], [any | null, number | null]] = [[null, null], [null, null]];
+    private currentGuideLines: [[any, number | null], [any, number | null]] = [[null, null], [null, null]];
 
     private boardScheme: BoardScheme;
 
@@ -50,11 +50,84 @@ export class Board {
         this.segmentHatchesCounter = 1;
         this.anglesHatchesCounter = 1;
         this.enteredFormulas = [];
-        this.promptingShapes = [];
+        this.promptingShapes = {};
         this.highlightedShapes = [];
         this.currentGuideLines = [[null, null], [null, null]];
 
         this.boardScheme = new BoardScheme();
+
+        this.promptingShapes['point'] = this.board.create('point', [0, 0], { 
+            visible: false,
+            showInfobox: false,
+            label: {visible: false}});
+        
+        this.promptingShapes['segment'] = this.board.create('line', [0, 0, 0], {
+            straightFirst: false,
+            straightLast: false,
+            strokeWidth: Sizes.STROKE_WIDTH,
+            color: Colors.TERTIARY,
+            highlightStrokeColor: Colors.TERTIARY
+        });
+
+        this.promptingShapes['line'] = this.board.create('line', [0, 0, 0], {
+            strokeWidth: Sizes.STROKE_WIDTH,
+            color: Colors.TERTIARY,
+            highlightStrokeColor: Colors.TERTIARY
+        });
+
+        this.promptingShapes['ray'] = this.board.create('line', [0, 0, 0], { 
+            straightFirst: false,
+            strokeWidth: Sizes.STROKE_WIDTH,
+            color: Colors.TERTIARY,
+            highlightStrokeColor: Colors.TERTIARY
+        });
+
+        this.promptingShapes['circle'] = this.board.create('circle', [this.promptingShapes['point'], 0], { 
+            fillColor: 'none',
+            strokeWidth: Sizes.STROKE_WIDTH,
+            strokeColor: Colors.TERTIARY,
+            highlightStrokeColor: Colors.TERTIARY
+        });
+
+        this.promptingShapes['perpendicularLine'] = this.board.create('perpendicular', [this.promptingShapes['line'], this.promptingShapes['point']], {
+            strokeWidth: Sizes.STROKE_WIDTH,
+            color: Colors.TERTIARY,
+            highlightStrokeColor: Colors.TERTIARY,
+            visible: false,
+        });
+
+        this.promptingShapes['parallelLine'] = this.board.create('parallel', [this.promptingShapes['line'], this.promptingShapes['point']], {
+            strokeWidth: Sizes.STROKE_WIDTH,
+            color: Colors.TERTIARY,
+            highlightStrokeColor: Colors.TERTIARY,
+            visible: false,
+        });
+
+        this.currentGuideLines[0][0] = this.board.create('curve', [
+            function(t: any) { return 0; }, 
+            function(t: any) { return t; }
+        ], { 
+            straightFirst: false,
+            strokeWidth: Sizes.STROKE_WIDTH / 2,
+            color: Colors.TERTIARY,
+            highlightStrokeColor: Colors.TERTIARY,
+            dash: 5,
+            fixed: true
+        });
+
+        this.currentGuideLines[1][0] = this.currentGuideLines[1][0] = this.board.create('curve', [
+            function(t: any) { return t; }, 
+            function(t: any) { return 0; }
+        ], { 
+            straightFirst: false,
+            strokeWidth: Sizes.STROKE_WIDTH / 2,
+            color: Colors.TERTIARY,
+            highlightStrokeColor: Colors.TERTIARY,
+            dash: 5,
+            fixed: true
+        });
+
+        this.board.update();
 
         document.getElementById('jxgbox_navigation_out')!.addEventListener('click', () => { this.showFormulas(); });
         document.getElementById('jxgbox_navigation_100')!.addEventListener('click', () => { this.showFormulas(); });
@@ -145,11 +218,11 @@ export class Board {
     }
 
     private createPromptingPoint(x: number, y: number): any {
-        const point = this.board.create('point', [x, y], { 
-            visible: false,
-            showInfobox: false,
-            label: {visible: false,}
-        });
+        const point = this.promptingShapes['point'];
+
+        point.coords.usrCoords[1] = x;
+        point.coords.usrCoords[2] = y;
+        this.board.update();
 
         return point;
     }
@@ -223,13 +296,11 @@ export class Board {
     }
 
     private createPromptingSegment(point1: any, point2: any): any {
-        const segment = this.board.create('line', [point1, point2], {
-            straightFirst: false,
-            straightLast: false,
-            strokeWidth: Sizes.STROKE_WIDTH,
-            color: Colors.TERTIARY,
-            highlightStrokeColor: Colors.TERTIARY
-        });
+        const segment = this.promptingShapes['segment'];
+
+        segment.point1 = point1;
+        segment.point2 = point2;
+        this.board.update();
 
         return segment;
     }
@@ -251,12 +322,11 @@ export class Board {
     }
 
     private createPromptingRay(point1: any, point2: any): any {
-        const ray = this.board.create('line', [point1, point2], { 
-            straightFirst: false,
-            strokeWidth: Sizes.STROKE_WIDTH,
-            color: Colors.TERTIARY,
-            highlightStrokeColor: Colors.TERTIARY
-        });
+        const ray = this.promptingShapes['ray'];
+
+        ray.point1 = point1;
+        ray.point2 = point2;
+        this.board.update();
 
         return ray;
     }
@@ -277,11 +347,11 @@ export class Board {
     }
 
     private createPromptingLine(point1: any, point2: any): any {
-        const line = this.board.create('line', [point1, point2], {
-            strokeWidth: Sizes.STROKE_WIDTH,
-            color: Colors.TERTIARY,
-            highlightStrokeColor: Colors.TERTIARY
-        });
+        const line = this.promptingShapes['line'];
+        
+        line.point1 = point1;
+        line.point2 = point2;
+        this.board.update();
 
         return line;
     }
@@ -303,12 +373,11 @@ export class Board {
     }
 
     private createPromptingCircle(point1: any, point2: any): any {
-        const circle = this.board.create('circle', [point1, point2], { 
-            fillColor: 'none',
-            strokeWidth: Sizes.STROKE_WIDTH,
-            strokeColor: Colors.TERTIARY,
-            highlightStrokeColor: Colors.TERTIARY
-        });
+        const circle = this.promptingShapes['circle'];
+
+        circle.point1 = point1;
+        circle.point2 = point2;
+        this.board.update();
 
         return circle;
     }
@@ -345,8 +414,15 @@ export class Board {
                 continue;
             }
 
-            if(this.promptingShapes.filter((promptingShape) => obj.id == promptingShape.id).length > 0) {
-                continue;
+            var foundInPrompting = false;
+            for(let type in this.promptingShapes) {
+                if(this.promptingShapes[type].id == obj.id) {
+                    foundInPrompting = true;
+                    break;
+                }
+            }
+            if(foundInPrompting) { 
+                continue; 
             }
 
             if(isLine(obj) || isCircle(obj)) {
@@ -383,11 +459,7 @@ export class Board {
     }
 
     private createPromptingPerpendicularLine(baseLine: any, basePoint: any): any {
-        const line = this.board.create('perpendicular', [baseLine, basePoint], {
-            strokeWidth: Sizes.STROKE_WIDTH,
-            color: Colors.TERTIARY,
-            highlightStrokeColor: Colors.TERTIARY
-        });
+        const line = this.promptingShapes['perpendicularLines'];
 
         return line;
     }
@@ -411,11 +483,7 @@ export class Board {
     }
 
     private createPromptingParallelLine(baseLine: any, basePoint: any): any {
-        const line = this.board.create('parallel', [baseLine, basePoint], {
-            strokeWidth: Sizes.STROKE_WIDTH,
-            color: Colors.TERTIARY,
-            highlightStrokeColor: Colors.TERTIARY
-        });
+        const line = this.promptingShapes['parallelLines'];
 
         return line;
     }
@@ -1337,13 +1405,11 @@ export class Board {
     }
 
     private drawPromptingShapesAndGuideLines = (event: any): void => {
-        this.promptingShapes.forEach((shape) => this.board.removeObject(shape));
-        this.promptingShapes = [];
+        for(let type in this.promptingShapes) {
+            //this.board.removeObject(this.promptingShapes[type].id)
+        }
         
         if(event === null) { return; }
-
-        this.currentGuideLines.forEach((line) => { if(line[0] !== null) { this.board.removeObject(line[0]); } });
-        this.currentGuideLines = [[null, null], [null, null]];
 
         const mouseCoords = this.board.getUsrCoordsOfMouse(event);
         
@@ -1354,6 +1420,14 @@ export class Board {
 
         for(let objKey in this.board.objects) {
             const obj = this.board.objects[objKey]
+            
+            if(obj.id.includes('P') && !obj.id.includes('Label')) {
+                const pointId: number = Number.parseInt(obj.id.substring(obj.id.indexOf('P') + 1));
+                if(pointId < 20) {
+                    continue;
+                }
+            }
+
             if(isPoint(obj) || isIntersectionPoint(obj)) {
                 const distX = Math.abs(mouseCoords[0] - xCoord(obj));
                 const distY = Math.abs(mouseCoords[1] - yCoord(obj));
@@ -1371,71 +1445,51 @@ export class Board {
         }
         
         if(closestPointXVal < Sizes.GUIDE_LINE_OFFSET) {
-            this.currentGuideLines[0][0] = this.board.create('curve', [
-                function(t: any) { return xCoord(closestPointXObj!); }, 
-                function(t: any) { return t; }
-            ],
-            { 
-                straightFirst: false,
-                strokeWidth: Sizes.STROKE_WIDTH / 2,
-                color: Colors.TERTIARY,
-                highlightStrokeColor: Colors.TERTIARY,
-                dash: 5,
-                fixed: true
-            });
-            
             this.currentGuideLines[0][1] = xCoord(closestPointXObj!);
+            this.currentGuideLines[0][0].X = function(t: any) { return xCoord(closestPointXObj!); };
+            this.currentGuideLines[0][0].setAttribute({'visible': true});
+        }
+        else {
+            this.currentGuideLines[0][0].setAttribute({'visible': false});
+            this.currentGuideLines[0][1] = null;
         }
 
         if(closestPointYVal < Sizes.GUIDE_LINE_OFFSET) {
-            this.currentGuideLines[1][0] = this.board.create('curve', [
-                function(t: any) { return t; }, 
-                function(t: any) { return yCoord(closestPointYObj!); }
-            ],
-            { 
-                straightFirst: false,
-                strokeWidth: Sizes.STROKE_WIDTH / 2,
-                color: Colors.TERTIARY,
-                highlightStrokeColor: Colors.TERTIARY,
-                dash: 5,
-                fixed: true
-            });
-
             this.currentGuideLines[1][1] = yCoord(closestPointYObj!);
+            this.currentGuideLines[1][0].Y = function(t: any) { return yCoord(closestPointYObj!); };
+            this.currentGuideLines[1][0].setAttribute({'visible': true});
+        }
+        else {
+            this.currentGuideLines[1][0].setAttribute({'visible': false});
+            this.currentGuideLines[1][1] = null;
         }
         
-        if(this.currentGuideLines[0][0] !== null) { mouseCoords[0] = this.currentGuideLines[0][1]; }
-        if(this.currentGuideLines[1][0] !== null) { mouseCoords[1] = this.currentGuideLines[1][1]; }
+        if(this.currentGuideLines[0][1] !== null) { mouseCoords[0] = this.currentGuideLines[0][1]; }
+        if(this.currentGuideLines[1][1] !== null) { mouseCoords[1] = this.currentGuideLines[1][1]; }
         
         if(this.action == ActionEnum.CREATE_SEGMENT && this.shapesAccumulator.length == 1) {
             const point = this.createPromptingPoint(mouseCoords[0], mouseCoords[1]);
-            this.promptingShapes.push(point);
-            this.promptingShapes.push(this.createPromptingSegment(this.shapesAccumulator[0], point));
+            this.createPromptingSegment(this.shapesAccumulator[0], point);
         }
         else if(this.action == ActionEnum.CREATE_LINE && this.shapesAccumulator.length == 1) {
             const point = this.createPromptingPoint(mouseCoords[0], mouseCoords[1]);
-            this.promptingShapes.push(point);
-            this.promptingShapes.push(this.createPromptingLine(this.shapesAccumulator[0], point));
+            this.createPromptingLine(this.shapesAccumulator[0], point);
         }
         else if(this.action == ActionEnum.CREATE_RAY && this.shapesAccumulator.length == 1) {
             const point = this.createPromptingPoint(mouseCoords[0], mouseCoords[1]);
-            this.promptingShapes.push(point);
-            this.promptingShapes.push(this.createPromptingRay(this.shapesAccumulator[0], point));
+            this.createPromptingRay(this.shapesAccumulator[0], point);
         }
         else if(this.action == ActionEnum.CREATE_CIRCLE && this.shapesAccumulator.length == 1) {
             const point = this.createPromptingPoint(mouseCoords[0], mouseCoords[1]);
-            this.promptingShapes.push(point);
-            this.promptingShapes.push(this.createPromptingCircle(this.shapesAccumulator[0], point));
+            this.createPromptingCircle(this.shapesAccumulator[0], point);
         }
         else if(this.action == ActionEnum.CREATE_PERPENDICULAR_LINE && this.shapesAccumulator.length == 1) {
             const point = this.createPromptingPoint(mouseCoords[0], mouseCoords[1]);
-            this.promptingShapes.push(point);
-            this.promptingShapes.push(this.createPromptingPerpendicularLine(this.shapesAccumulator[0], point));
+            this.createPromptingPerpendicularLine(this.shapesAccumulator[0], point);
         }
         else if(this.action == ActionEnum.CREATE_PARALLEL_LINE && this.shapesAccumulator.length == 1) {
             const point = this.createPromptingPoint(mouseCoords[0], mouseCoords[1]);
-            this.promptingShapes.push(point);
-            this.promptingShapes.push(this.createPromptingParallelLine(this.shapesAccumulator[0], point));
+            this.createPromptingParallelLine(this.shapesAccumulator[0], point);
         }
     }
 
@@ -1460,8 +1514,8 @@ export class Board {
         }
 
         var coords = this.getCoords(event);
-        if(this.currentGuideLines[0][0] !== null) { coords[0] = this.currentGuideLines[0][1]!; }
-        if(this.currentGuideLines[1][0] !== null) { coords[1] = this.currentGuideLines[1][1]!; }
+        if(this.currentGuideLines[0][1] !== null) { coords[0] = this.currentGuideLines[0][1]!; }
+        if(this.currentGuideLines[1][1] !== null) { coords[1] = this.currentGuideLines[1][1]!; }
 
         const x = coords[0];
         const y = coords[1];
@@ -1544,8 +1598,8 @@ export class Board {
         }
 
         var coords = this.getCoords(event);
-        //if(this.currentGuideLines[0][0] !== null) { coords[0] = this.currentGuideLines[0][1]!; }
-        //if(this.currentGuideLines[1][0] !== null) { coords[1] = this.currentGuideLines[1][1]!; }
+        //if(this.currentGuideLines[0][1] !== null) { coords[0] = this.currentGuideLines[0][1]!; }
+        //if(this.currentGuideLines[1][1] !== null) { coords[1] = this.currentGuideLines[1][1]!; }
 
         //const x = coords[0];
         //const y = coords[1];
@@ -1621,8 +1675,8 @@ export class Board {
         }
 
         var coords = this.getCoords(event);
-        if(this.currentGuideLines[0][0] !== null) { coords[0] = this.currentGuideLines[0][1]!; }
-        if(this.currentGuideLines[1][0] !== null) { coords[1] = this.currentGuideLines[1][1]!; }
+        if(this.currentGuideLines[0][1] !== null) { coords[0] = this.currentGuideLines[0][1]!; }
+        if(this.currentGuideLines[1][1] !== null) { coords[1] = this.currentGuideLines[1][1]!; }
 
         const x = coords[0];
         const y = coords[1];
@@ -1722,8 +1776,8 @@ export class Board {
         }
 
         var coords = this.getCoords(event);
-        if(this.currentGuideLines[0][0] !== null) { coords[0] = this.currentGuideLines[0][1]!; }
-        if(this.currentGuideLines[1][0] !== null) { coords[1] = this.currentGuideLines[1][1]!; }
+        if(this.currentGuideLines[0][1] !== null) { coords[0] = this.currentGuideLines[0][1]!; }
+        if(this.currentGuideLines[1][1] !== null) { coords[1] = this.currentGuideLines[1][1]!; }
 
         const x = coords[0];
         const y = coords[1];
