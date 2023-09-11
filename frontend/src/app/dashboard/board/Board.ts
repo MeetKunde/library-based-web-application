@@ -112,7 +112,8 @@ export class Board {
             color: Colors.TERTIARY,
             highlightStrokeColor: Colors.TERTIARY,
             dash: 5,
-            fixed: true
+            fixed: true,
+            visible: false,
         });
 
         this.currentGuideLines[1][0] = this.currentGuideLines[1][0] = this.board.create('curve', [
@@ -124,7 +125,8 @@ export class Board {
             color: Colors.TERTIARY,
             highlightStrokeColor: Colors.TERTIARY,
             dash: 5,
-            fixed: true
+            fixed: true,
+            visible: false,
         });
 
         this.board.update();
@@ -300,6 +302,7 @@ export class Board {
 
         segment.point1 = point1;
         segment.point2 = point2;
+        segment.setAttribute({'visible': true});
         this.board.update();
 
         return segment;
@@ -326,6 +329,7 @@ export class Board {
 
         ray.point1 = point1;
         ray.point2 = point2;
+        ray.setAttribute({'visible': true});
         this.board.update();
 
         return ray;
@@ -351,6 +355,7 @@ export class Board {
         
         line.point1 = point1;
         line.point2 = point2;
+        line.setAttribute({'visible': true});
         this.board.update();
 
         return line;
@@ -375,8 +380,9 @@ export class Board {
     private createPromptingCircle(point1: any, point2: any): any {
         const circle = this.promptingShapes['circle'];
 
-        circle.point1 = point1;
-        circle.point2 = point2;
+        circle.center = point1;
+        circle.setRadius(distance(point1, point2));
+        circle.setAttribute({visible: true});
         this.board.update();
 
         return circle;
@@ -459,7 +465,10 @@ export class Board {
     }
 
     private createPromptingPerpendicularLine(baseLine: any, basePoint: any): any {
-        const line = this.promptingShapes['perpendicularLines'];
+        const line = this.promptingShapes['perpendicularLine'];
+
+        //line.setAttribute({visible: true});
+        //this.board.update();
 
         return line;
     }
@@ -483,7 +492,10 @@ export class Board {
     }
 
     private createPromptingParallelLine(baseLine: any, basePoint: any): any {
-        const line = this.promptingShapes['parallelLines'];
+        const line = this.promptingShapes['parallelLine'];
+
+        //line.setAttribute({visible: true});
+        //this.board.update();
 
         return line;
     }
@@ -1406,7 +1418,7 @@ export class Board {
 
     private drawPromptingShapesAndGuideLines = (event: any): void => {
         for(let type in this.promptingShapes) {
-            //this.board.removeObject(this.promptingShapes[type].id)
+            this.promptingShapes[type].setAttribute({'visible': false});
         }
         
         if(event === null) { return; }
