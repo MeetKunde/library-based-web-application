@@ -9,9 +9,9 @@ export interface PointJson {
 
 export interface LineJson {
     id: string,
-    A: number, 
-    B: string,
-    C: string
+    a: number, 
+    b: number,
+    type: number,
     pointsOn: string[]
 }
 

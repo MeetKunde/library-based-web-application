@@ -253,11 +253,11 @@ export class DashboardComponent {
   }
 
   saveScheme() {
-    console.log(this.board?.getScheme());
+    console.log(JSON.stringify(this.board?.getScheme()));
   }
 
   loadScheme() {
-    console.log(this.board?.getScheme());
+    console.log(JSON.stringify(this.board?.getScheme()));
   }
 
   reinitializeBoard() {

@@ -4,7 +4,7 @@ import { BoardSchemeJson } from "./BoardSchemeJson";
 import { Colors, Naming, Options, Sizes } from "./Config";
 import { PolygonType } from "./PolygonType";
 import { AnswearType, RequestEnum } from "./RequestEnum";
-import { coords, distance, genRandom, isCircle, isIntersectionPoint, isLine, isPoint, xCoord, yCoord } from "./Utils";
+import { xCoord, yCoord, distance, genRandom, isCircle, isIntersectionPoint, isLine, isPoint } from "./Utils";
 
 declare const JXG: any 
 
@@ -290,7 +290,7 @@ export class Board {
         });
 
         segment.on('down', (event: any) => { this.handleLineClick(event, segment); });
-        this.boardScheme.addSegment(segment);
+        this.boardScheme.addSegment(segment, point1, point2);
         noIntersectWithIds.forEach((id) => this.noIntersect.push([segment.id, id]));
         this.createIntersectionPoints(segment);
         
@@ -317,7 +317,7 @@ export class Board {
         });
 
         ray.on('down', (event: any) => { this.handleLineClick(event, ray); });
-        this.boardScheme.addRay(ray);
+        this.boardScheme.addRay(ray, point1, point2);
         noIntersectWithIds.forEach((id) => this.noIntersect.push([ray.id, id]));
         this.createIntersectionPoints(ray);
 
@@ -343,7 +343,7 @@ export class Board {
         });
 
         line.on('down', (event: any) => { this.handleLineClick(event, line); });
-        this.boardScheme.addLine(line);
+        this.boardScheme.addLine(line, point1, point2);
         noIntersectWithIds.forEach((id) => this.noIntersect.push([line.id, id]));
         this.createIntersectionPoints(line);
 
@@ -370,7 +370,7 @@ export class Board {
         });
 
         circle.on('down', (event: any) => { this.handleCircleClick(event, circle); });
-        this.boardScheme.addCircle(circle);
+        this.boardScheme.addCircle(circle, point1, point2);
         noIntersectWithIds.forEach((id) => this.noIntersect.push([circle.id, id]));
         this.createIntersectionPoints(circle);
 
@@ -1432,13 +1432,6 @@ export class Board {
 
         for(let objKey in this.board.objects) {
             const obj = this.board.objects[objKey]
-            
-            if(obj.id.includes('P') && !obj.id.includes('Label')) {
-                const pointId: number = Number.parseInt(obj.id.substring(obj.id.indexOf('P') + 1));
-                if(pointId < 20) {
-                    continue;
-                }
-            }
 
             if(isPoint(obj) || isIntersectionPoint(obj)) {
                 const distX = Math.abs(mouseCoords[0] - xCoord(obj));
@@ -1609,7 +1602,7 @@ export class Board {
             this.shapeClicked = true;
         }
 
-        var coords = this.getCoords(event);
+        //var coords = this.getCoords(event);
         //if(this.currentGuideLines[0][1] !== null) { coords[0] = this.currentGuideLines[0][1]!; }
         //if(this.currentGuideLines[1][1] !== null) { coords[1] = this.currentGuideLines[1][1]!; }
 

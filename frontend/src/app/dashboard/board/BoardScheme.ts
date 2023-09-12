@@ -102,25 +102,32 @@ export class BoardScheme {
         return inactiveReasons[0].id;
     }
 
-    addSegment(segmentObject: any): void {
+    addSegment(segmentObject: any, end1: any, end2: any): void {
+        console.log("Konce to " + end1.id + " oraz " + end2.id)
         this.segments.push(segmentObject.id);
         this.shapes[segmentObject.id] = { obj: segmentObject, pointsOn: new Set() };
-        (this.shapes[segmentObject.id] as LineType).pointsOn.add(segmentObject.inherits[0].id);
-        (this.shapes[segmentObject.id] as LineType).pointsOn.add(segmentObject.inherits[1].id);
+        (this.shapes[segmentObject.id] as LineType).pointsOn.add(end1.id);
+        (this.shapes[segmentObject.id] as LineType).pointsOn.add(end2.id);
+        //(this.shapes[segmentObject.id] as LineType).pointsOn.add(segmentObject.inherits[0].id);
+        //(this.shapes[segmentObject.id] as LineType).pointsOn.add(segmentObject.inherits[1].id);
     }
 
-    addRay(rayObject: any): void {
+    addRay(rayObject: any, end1: any, end2: any): void {
         this.rays.push(rayObject.id);
         this.shapes[rayObject.id] = { obj: rayObject, pointsOn: new Set() };
-        (this.shapes[rayObject.id] as LineType).pointsOn.add(rayObject.inherits[0].id);
-        (this.shapes[rayObject.id] as LineType).pointsOn.add(rayObject.inherits[1].id);
+        (this.shapes[rayObject.id] as LineType).pointsOn.add(end1.id);
+        (this.shapes[rayObject.id] as LineType).pointsOn.add(end2.id);
+        //(this.shapes[rayObject.id] as LineType).pointsOn.add(rayObject.inherits[0].id);
+        //(this.shapes[rayObject.id] as LineType).pointsOn.add(rayObject.inherits[1].id);
     }
 
-    addLine(lineObject: any): void {
+    addLine(lineObject: any, end1: any, end2: any): void {
         this.lines.push(lineObject.id);
         this.shapes[lineObject.id] = { obj: lineObject, pointsOn: new Set() };
-        (this.shapes[lineObject.id] as LineType).pointsOn.add(lineObject.inherits[0].id);
-        (this.shapes[lineObject.id] as LineType).pointsOn.add(lineObject.inherits[1].id);
+        (this.shapes[lineObject.id] as LineType).pointsOn.add(end1.id);
+        (this.shapes[lineObject.id] as LineType).pointsOn.add(end2.id);
+        //(this.shapes[lineObject.id] as LineType).pointsOn.add(lineObject.inherits[0].id);
+        //(this.shapes[lineObject.id] as LineType).pointsOn.add(lineObject.inherits[1].id);
     }
 
     addLineBasedOnOnePoint(lineObject: any, basePointObject: any): void {
@@ -129,10 +136,11 @@ export class BoardScheme {
         (this.shapes[lineObject.id] as LineType).pointsOn.add(basePointObject.id);
     }
 
-    addCircle(circleObject: any): void {
+    addCircle(circleObject: any, center: any, pointOn: any): void {
         this.circles.push(circleObject.id);
-        this.shapes[circleObject.id] = { obj: circleObject, center: circleObject.inherits[0].id, pointsOn: new Set() };
-        (this.shapes[circleObject.id] as CircleType).pointsOn.add(circleObject.inherits[1].id);
+        this.shapes[circleObject.id] = { obj: circleObject, center: center.id, pointsOn: new Set() };
+        (this.shapes[circleObject.id] as CircleType).pointsOn.add(pointOn.id);
+        //(this.shapes[circleObject.id] as CircleType).pointsOn.add(circleObject.inherits[1].id);
     }
 
     addPerpendicularity(lineObject: any, baseLineObject: any, basePointObject: any): void {
@@ -294,14 +302,39 @@ export class BoardScheme {
                 else { pointsOnLine.add((this.shapes[pointId] as PointType).inactiveReason); }
             }
             pointsOnLine.delete('');
-            linesList.push({
-                id: line.obj.id,
-                // Ax + By + C = 0
-                A: line.obj.stdform[1],
-                B: line.obj.stdform[2], 
-                C: line.obj.stdform[0],
-                pointsOn: [...pointsOnLine]
-            }); 
+            const A = line.obj.stdform[1];
+            const B = line.obj.stdform[2];
+            const C = line.obj.stdform[0];
+            if(Math.abs(B) < 0.00001) {
+                linesList.push({
+                    // x = b
+                    id: line.obj.id,
+                    a: 0,
+                    b: -C,
+                    type: 0,
+                    pointsOn: [...pointsOnLine]
+                }); 
+            }
+            else if(Math.abs(A) < 0.00001) {
+                linesList.push({
+                    // y = b
+                    id: line.obj.id,
+                    a: 0,
+                    b: -C,
+                    type: 1,
+                    pointsOn: [...pointsOnLine]
+                }); 
+            }
+            else {
+                linesList.push({
+                    // y = ax + b
+                    id: line.obj.id,
+                    a:  -A/B,
+                    b: -C/B,
+                    type: 2,
+                    pointsOn: [...pointsOnLine]
+                }); 
+            }
         }
 
         var circlesList: CircleJson[] = [];
