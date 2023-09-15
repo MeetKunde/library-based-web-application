@@ -103,7 +103,6 @@ export class BoardScheme {
     }
 
     addSegment(segmentObject: any, end1: any, end2: any): void {
-        console.log("Konce to " + end1.id + " oraz " + end2.id)
         this.segments.push(segmentObject.id);
         this.shapes[segmentObject.id] = { obj: segmentObject, pointsOn: new Set() };
         (this.shapes[segmentObject.id] as LineType).pointsOn.add(end1.id);
@@ -272,6 +271,27 @@ export class BoardScheme {
         }
 
         return [false, ''];
+    }
+
+    getPointIds(): string[] {
+        return [...this.points, ...this.gliders, ...this.intersections].slice();
+    }
+
+    getActivePointIds(): string[] {
+        var pointIds: string[] = [];
+        for(const pointId of [...this.points, ...this.gliders, ...this.intersections]) {
+            const point = this.shapes[pointId] as PointType;
+            if(point.isActive) { pointIds.push(pointId); }
+        }
+        return pointIds.slice();
+    }
+
+    getLineIds(): string[] {
+        return [...this.segments, ...this.rays, ...this.lines].slice();
+    }
+
+    getCircleIds(): string[] {
+        return [...this.circles].slice();
     }
 
     pointLiesOnShapes(shapeId: string, pointId: string): boolean {

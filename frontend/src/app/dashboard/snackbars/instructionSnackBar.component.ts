@@ -97,8 +97,10 @@ export class InstructionSnackBarComponent {
       case ActionEnum.CREATE_TRAPEZOID:
         this.text = 'Click on board or on shape';
         break;
+      case ActionEnum.CREATE_INTERSECTION:
+        this.text = 'Select two shapes(line or circle types)';
+        break;
       default:
-        console.log('FUCK')
         // unreachable
         break;
     }
