@@ -1,4 +1,4 @@
-import { PolygonType } from "./PolygonType";
+import { PolygonTypeEnum } from "./shared-enums/PolygonTypeEnum";
 
 export enum RequestEnum {
     FORMULA,
@@ -24,5 +24,5 @@ export type AnswearType =
     { perimeter: string } |
     { area: string } |
     { sides: number } |
-    { triangleType: /*PolygonType.SCALENE_ACUTE_TRIANGLE |*/ PolygonType.SCALENE_RIGHT_TRIANGLE | PolygonType.EQUILATERAL_TRIANGLE | PolygonType.ISOSCELES_ACUTE_TRIANGLE | PolygonType.ISOSCELES_RIGHT_TRIANGLE | /*PolygonType.OBTUSE_SCALENE_TRIANGLE |*/ PolygonType.OBTUSE_ISOSCELES_TRIANGLE } |
-    { trapezoidType: PolygonType.SCALENE_TRAPEZOID | PolygonType.ISOSCELES_TRAPEZOID | PolygonType.RIGHT_TRAPEZOID }
+    { triangleType:  PolygonTypeEnum.SCALENE_RIGHT_TRIANGLE | PolygonTypeEnum.EQUILATERAL_TRIANGLE | PolygonTypeEnum.ISOSCELES_ACUTE_TRIANGLE | PolygonTypeEnum.ISOSCELES_RIGHT_TRIANGLE | PolygonTypeEnum.OBTUSE_ISOSCELES_TRIANGLE } |
+    { trapezoidType: PolygonTypeEnum.SCALENE_TRAPEZOID | PolygonTypeEnum.ISOSCELES_TRAPEZOID | PolygonTypeEnum.RIGHT_TRAPEZOID }

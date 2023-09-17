@@ -1,4 +1,6 @@
-import { PolygonType } from "./PolygonType"
+import { AngleTypeEnum } from "./shared-enums/AngleTypeEnum"
+import { LineTypeEnum } from "./shared-enums/LineTypeEnum"
+import { PolygonTypeEnum } from "./shared-enums/PolygonTypeEnum"
 
 export interface PointJson {
     id: string,
@@ -11,7 +13,7 @@ export interface LineJson {
     id: string,
     a: number, 
     b: number,
-    type: number,
+    type: LineTypeEnum,
     pointsOn: string[]
 }
 
@@ -55,6 +57,7 @@ export interface AngleLineJson {
     angleEnd1Id: string,
     angleVertexId: string,
     angleEnd2Id: string,
+    angleType: AngleTypeEnum,
     lineId: string
 }
 
@@ -75,12 +78,11 @@ export interface CirclePolygonJson {
 
 export interface TriangleCircleJson {
     circleId: string,
-
+    polygonVerticesIds: string[]
 }
 
 export interface PolygonTypeJson {
-    polygonVerticesIds: string[],
-    polygonType: PolygonType
+    
 }
 
 export interface PolygonSegmentJson {
@@ -112,6 +114,16 @@ export interface AngleMeasureJson {
     measure: string
 }
 
+export interface PolygonPerimeterJson {
+    polygonVerticesIds: string[],
+    perimeter: string
+}
+
+export interface PolygonAreaJson {
+    polygonVerticesIds: string[],
+    area: string
+}
+
 export interface BoardSchemeJson {
     points: PointJson[];
     lines: LineJson[];
@@ -133,5 +145,7 @@ export interface BoardSchemeJson {
     midSegments: PolygonSegmentJson[];
     segmentLengths: SegmentLengthJson[];
     angleMeasures: AngleMeasureJson[];
+    perimeters: PolygonPerimeterJson[];
+    areas: PolygonAreaJson[];
     formulas: string[];
 }

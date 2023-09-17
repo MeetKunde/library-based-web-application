@@ -1,5 +1,7 @@
+import { AngleTypeEnum } from "./shared-enums/AngleTypeEnum";
+import { LineTypeEnum } from "./shared-enums/LineTypeEnum";
+import { PolygonTypeEnum } from "./shared-enums/PolygonTypeEnum";
 import { BoardSchemeJson, CircleJson, LineJson, PointJson } from "./BoardSchemeJson";
-import { PolygonType } from "./PolygonType";
 
 type PointType = {obj: any, isActive: boolean, inactiveReason: string};
 type LineType = {obj: any, pointsOn: Set<string>};
@@ -21,19 +23,21 @@ export class BoardScheme {
     private equalSegments: [string, string, string, string][];                      // [segment 1 end 1 id, segment 1 end 2 id, segment 2 end 1 id, segment 2 end 2 id]
     private equalAngles: [string, string, string, string, string, string,][];       // [angle 1 end 1 id, angle 1 vertex id, angle 1 end 2 id, angle 2 end 1 id, angle 2 vertex id, angle 2 end 2 id]
     private midPerpendiculars: [string, string, string][];                          // [segment end 1 id, segment end 2 id, line id]
-    private bisectors: [string, string, string, string][];                          // [angle end 1 id, angle vertex id, angle end 2 id, line id]
+    private bisectors: [string, string, string, AngleTypeEnum, string][];                          // [angle end 1 id, angle vertex id, angle end 2 id, angle type, line id]
     private tangentLines: [string, string][];                                       // [circle id, line id]
     private tangentCircles: [string, string][];                                     // [circle 1 id, circle 2 id]
     private circumscribedCircles: [string, string[]][];                             // [circle id, array of polygon vertices ids]
     private inscribedCircles: [string, string[]][];                                 // [circle id, array of polygon vertices ids]
     private escribedCircles: [string, string, string, string][];                    // [circle id, triangle vertex 1 id, triangle vertex 2 id, triangle vertex 3 id]
-    private polygonTypes: [string[], PolygonType][];                                // [array of polygon vertices ids, polygon type enum]
+    private polygonTypes: [string[], PolygonTypeEnum][];                            // [array of polygon vertices ids, polygon type enum]
     private medians: [string, string, string, string, string][];                    // [triangle top vertex id, triangle base end 1 id, triangle base end 2 id, median end 1 id, median end 2 id]
     private altitudes: [string, string, string, string, string][];                  // [triangle top vertex id, triangle base end 1 id, triangle base end 2 id, altitude end 1 id, altitude end 2 id]
     private midSegments: [string, string, string, string, string, string][];        // [side 1 end 1 id, side1 end 2 id, side 2 end 1 id, side 2 end 2 id, midSegment end 1 id, midSegment end 2 id]
     
     private segmentLengths: [string, string, string][];                             // [segment end 1 id, segment end 2 id, string of formula]
     private angleMeasures: [string, string, string, boolean, string][];             // [angle end 1 id, angle vertex id, angle end 2 id, angle is convex, string of formula]
+    private perimeters: [string[], string][]                                        // [array of polygon vertices ids, string of formula]
+    private areas: [string[], string][]                                             // [array of polygon vertices ids, string of formula]
     private formulas: string[];                                                     // string of formula
 
     constructor() {
@@ -64,6 +68,8 @@ export class BoardScheme {
         
         this.segmentLengths = [];
         this.angleMeasures = [];
+        this.perimeters = [];
+        this.areas = [];
         this.formulas = [];
     }
 
@@ -162,8 +168,8 @@ export class BoardScheme {
         this.midPerpendiculars.push([segmentEnd1Object.id, segmentEnd2Object.id, lineObject.id]);
     }
 
-    addBisector(angleEnd1Object: any, angleVertexObject:any, angleEnd2Object: any, lineObject: any): void {
-        this.bisectors.push([angleEnd1Object.id, angleVertexObject.id, angleEnd2Object.id, lineObject.id]);
+    addBisector(angleEnd1Object: any, angleVertexObject:any, angleEnd2Object: any, angleType: AngleTypeEnum, lineObject: any): void {
+        this.bisectors.push([angleEnd1Object.id, angleVertexObject.id, angleEnd2Object.id, angleType, lineObject.id]);
     }
 
     addTangentLine(circleObject: any, lineObject: any): void {
@@ -186,7 +192,7 @@ export class BoardScheme {
         this.escribedCircles.push([circleObject.id, polygonVerticesObjects[0].id, polygonVerticesObjects[1].id, polygonVerticesObjects[2].id])
     }
 
-    addPolygonType(polygonVerticesObjects: any[], polygonType: PolygonType): void {
+    addPolygonType(polygonVerticesObjects: any[], polygonType: PolygonTypeEnum): void {
         this.polygonTypes.push([polygonVerticesObjects.map((vertex) => vertex.id), polygonType]);
     }
 
@@ -208,6 +214,14 @@ export class BoardScheme {
 
     setAngleMeasure(angleEnd1Object: any, angleVertexObject: any, angleEnd2Object: any, angleIsConvex: boolean, formula: string): void {
         this.angleMeasures.push([angleEnd1Object.id, angleVertexObject.id, angleEnd2Object.id, angleIsConvex, formula]);
+    }
+
+    setPolygonPerimeter(polygonVerticesObjects: any[], formula: string): void {
+        this.perimeters.push([polygonVerticesObjects, formula]);
+    }
+
+    setPolygonArea(polygonVerticesObjects: any[], formula: string): void {
+        this.areas.push([polygonVerticesObjects, formula]);
     }
 
     addFormula(formula: string): void {
@@ -331,7 +345,7 @@ export class BoardScheme {
                     id: line.obj.id,
                     a: 0,
                     b: -C,
-                    type: 0,
+                    type: LineTypeEnum.VERTICAL,
                     pointsOn: [...pointsOnLine]
                 }); 
             }
@@ -341,7 +355,7 @@ export class BoardScheme {
                     id: line.obj.id,
                     a: 0,
                     b: -C,
-                    type: 1,
+                    type: LineTypeEnum.HORIZONTAL,
                     pointsOn: [...pointsOnLine]
                 }); 
             }
@@ -351,7 +365,7 @@ export class BoardScheme {
                     id: line.obj.id,
                     a:  -A/B,
                     b: -C/B,
-                    type: 2,
+                    type: LineTypeEnum.SLANTED,
                     pointsOn: [...pointsOnLine]
                 }); 
             }
@@ -386,18 +400,20 @@ export class BoardScheme {
             equalSegments: this.equalSegments.map((dependency) => ({ segment1End1Id: dependency[0], segment1End2Id: dependency[1], segment2End1Id: dependency[2], segment2End2Id: dependency[3] })),
             equalAngles: this.equalAngles.map((dependency) => ({ angle1End1Id: dependency[0], angle1VertexId: dependency[1], angle1End2Id: dependency[2], angle2End1Id: dependency[3], angle2VertexId: dependency[4], angle2End2Id: dependency[5] })),
             midPerpendiculars: this.midPerpendiculars.map((dependency) => ({ segmentEnd1Id: dependency[0], segmentEnd2Id: dependency[1], lineId: dependency[2] })),
-            bisectors: this.bisectors.map((dependency) => ({ angleEnd1Id: dependency[0], angleVertexId: dependency[1], angleEnd2Id: dependency[2], lineId: dependency[3] })),
+            bisectors: this.bisectors.map((dependency) => ({ angleEnd1Id: dependency[0], angleVertexId: dependency[1], angleEnd2Id: dependency[2], angleType: dependency[3], lineId: dependency[4] })),
             tangentLines: this.tangentLines.map((dependency) => ({ circleId: dependency[0], lineId: dependency[1] })),
             tangentCircles: this.tangentCircles.map((dependency) => ({ circle1Id: dependency[0], circle2Id: dependency[1] })),
             circumscribedCircles: this.circumscribedCircles.map((dependency) => ({ circleId: dependency[0], polygonVerticesIds: dependency[1] })),
             inscribedCircles: this.inscribedCircles.map((dependency) => ({ circleId: dependency[0], polygonVerticesIds: dependency[1] })),
-            escribedCircles: this.escribedCircles.map((dependency) => ({ circleId: dependency[0], polygonPoints: dependency.slice(1, 5) })),
+            escribedCircles: this.escribedCircles.map((dependency) => ({ circleId: dependency[0], polygonVerticesIds: dependency.slice(1, 5) })),
             polygonTypes: this.polygonTypes.map((dependency) => ({  polygonVerticesIds: dependency[0], polygonType: dependency[1] })),
             medians: this.medians.map((dependency) => ({ polygonVerticesIds: dependency.slice(0, 3), segmentEnd1Id: dependency[3], segmentEnd2Id: dependency[4] })),
             altitudes: this.altitudes.map((dependency) => ({ polygonVerticesIds: dependency.slice(0, 3), segmentEnd1Id: dependency[3], segmentEnd2Id: dependency[4] })),
             midSegments: this.midSegments.map((dependency) => ({ polygonVerticesIds: dependency.slice(0, 4), segmentEnd1Id: dependency[4], segmentEnd2Id: dependency[5] })),
             segmentLengths: this.segmentLengths.map((dependency) => ({ segmentEnd1Id: dependency[0], segmentEnd2Id: dependency[1], length: dependency[2] })),
             angleMeasures: this.angleMeasures.map((dependency) => ({ angleEnd1Id: dependency[0], angleVertexId: dependency[1], angleEnd2Id: dependency[2], angleIsConvex: dependency[3], measure: dependency[4] })),
+            perimeters: this.perimeters.map((dependency) => ({ polygonVerticesIds: dependency[0], perimeter: dependency[1] })),
+            areas: this.areas.map((dependency) => ({ polygonVerticesIds: dependency[0], area: dependency[1] })),
             formulas: this.formulas,
         };
     }

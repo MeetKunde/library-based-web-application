@@ -1,10 +1,10 @@
 import { Component } from '@angular/core';
 import { MatDialogRef } from '@angular/material/dialog';
-import { PolygonType } from '../board/PolygonType';
+import { PolygonTypeEnum } from '../board/shared-enums/PolygonTypeEnum';
 
 export interface TrapezoidType {
   name: string;
-  type: PolygonType.SCALENE_TRAPEZOID | PolygonType.ISOSCELES_TRAPEZOID | PolygonType.RIGHT_TRAPEZOID;
+  type: PolygonTypeEnum.SCALENE_TRAPEZOID | PolygonTypeEnum.ISOSCELES_TRAPEZOID | PolygonTypeEnum.RIGHT_TRAPEZOID;
   state: boolean;
 }
   
@@ -27,14 +27,14 @@ export interface TrapezoidType {
 })
 export class SelectTrapezoidTypeDialogComponent {
   availableTypes: TrapezoidType[] = [
-    {name: 'Scalene', type: PolygonType.SCALENE_TRAPEZOID, state: true},
-    {name: 'Isosceles', type: PolygonType.ISOSCELES_TRAPEZOID, state: false},
-    {name: 'Right', type: PolygonType.RIGHT_TRAPEZOID, state: false},
+    {name: 'Scalene', type: PolygonTypeEnum.SCALENE_TRAPEZOID, state: true},
+    {name: 'Isosceles', type: PolygonTypeEnum.ISOSCELES_TRAPEZOID, state: false},
+    {name: 'Right', type: PolygonTypeEnum.RIGHT_TRAPEZOID, state: false},
   ];
 
-  selectedType: PolygonType | undefined = PolygonType.SCALENE_TRAPEZOID;
+  selectedType: PolygonTypeEnum | undefined = PolygonTypeEnum.SCALENE_TRAPEZOID;
 
-  changeSelected(type: PolygonType) {
+  changeSelected(type: PolygonTypeEnum) {
     if(this.selectedType == type) {
       this.selectedType = undefined;
     }

@@ -1,8 +1,9 @@
 import { ActionEnum } from "./ActionEnum";
+import { AngleTypeEnum } from "./shared-enums/AngleTypeEnum";
+import { PolygonTypeEnum } from "./shared-enums/PolygonTypeEnum";
 import { BoardScheme } from "./BoardScheme";
 import { BoardSchemeJson } from "./BoardSchemeJson";
 import { Colors, Naming, Options, Sizes } from "./Config";
-import { PolygonType } from "./PolygonType";
 import { AnswearType, RequestEnum } from "./RequestEnum";
 import { xCoord, yCoord, distance, genRandom, isCircle, isIntersectionPoint, isLine, isPoint } from "./Utils";
 
@@ -684,8 +685,12 @@ export class Board {
         const points = this.divideAngle(baseAnglePoints, 2, angleIsConvex, false);
         const ray = this.createRay(baseAnglePoints[1], points[1]);
 
+        var angleType = AngleTypeEnum.UNKNOWN;
+        if(angleIsConvex) { angleType = AngleTypeEnum.CONVEX; }
+        else { angleType = AngleTypeEnum.CONCAVE; }
+
         ray.on('down', (event: any) => { this.handleLineClick(event, ray); });
-        this.boardScheme.addBisector(baseAnglePoints[0], baseAnglePoints[1], baseAnglePoints[2], ray);
+        this.boardScheme.addBisector(baseAnglePoints[0], baseAnglePoints[1], baseAnglePoints[2], angleType, ray);
         return ray;
     }
 
@@ -938,28 +943,22 @@ export class Board {
 
     private createTrianglePointsRequestData(vertex1: any, vertex2: any): void {
         this.requestDataFromUser(RequestEnum.TRIANGLE_TYPE, (data) => {
-            const castedData = data as { triangleType: /*PolygonType.SCALENE_ACUTE_TRIANGLE |*/ PolygonType.SCALENE_RIGHT_TRIANGLE | PolygonType.EQUILATERAL_TRIANGLE | PolygonType.ISOSCELES_ACUTE_TRIANGLE | PolygonType.ISOSCELES_RIGHT_TRIANGLE | /*PolygonType.OBTUSE_SCALENE_TRIANGLE |*/ PolygonType.OBTUSE_ISOSCELES_TRIANGLE};
+            const castedData = data as { triangleType: PolygonTypeEnum.SCALENE_RIGHT_TRIANGLE | PolygonTypeEnum.EQUILATERAL_TRIANGLE | PolygonTypeEnum.ISOSCELES_ACUTE_TRIANGLE | PolygonTypeEnum.ISOSCELES_RIGHT_TRIANGLE | PolygonTypeEnum.OBTUSE_ISOSCELES_TRIANGLE};
 
             switch(castedData.triangleType) {
-                //case PolygonType.SCALENE_ACUTE_TRIANGLE:
-                //    this.createScaleneAcuteTrianglePoints(vertex1, vertex2);  
-                //    break;
-                case PolygonType.SCALENE_RIGHT_TRIANGLE:
+                case PolygonTypeEnum.SCALENE_RIGHT_TRIANGLE:
                     this.createScaleneRightTrianglePoints(vertex1, vertex2);
                     break;
-                case PolygonType.EQUILATERAL_TRIANGLE:
+                case PolygonTypeEnum.EQUILATERAL_TRIANGLE:
                     this.createEquilateralTrianglePoints(vertex1, vertex2);
                     break;
-                case PolygonType.ISOSCELES_ACUTE_TRIANGLE:
+                case PolygonTypeEnum.ISOSCELES_ACUTE_TRIANGLE:
                     this.createIsoscelesAcuteTrianglePoints(vertex1, vertex2);
                     break;
-                case PolygonType.ISOSCELES_RIGHT_TRIANGLE:
+                case PolygonTypeEnum.ISOSCELES_RIGHT_TRIANGLE:
                     this.createIsoscelesRightTrianglePoints(vertex1, vertex2);
                     break;
-                //case PolygonType.OBTUSE_SCALENE_TRIANGLE:
-                //    this.createObtuseScaleneTrianglePoints(vertex1, vertex2);
-                //    break;
-                case PolygonType.OBTUSE_ISOSCELES_TRIANGLE:
+                case PolygonTypeEnum.OBTUSE_ISOSCELES_TRIANGLE:
                     this.createObtuseIsoscelesTrianglePoints(vertex1, vertex2);
                     break;
                 default:
@@ -968,11 +967,6 @@ export class Board {
             }
         });
     }
-
-    //private createScaleneAcuteTrianglePoints(vertex1: any, vertex2: any): [any, any, any] {
-    //    const d = distance(vertex1, vertex2);
-    //    return [vertex1, vertex2, vertex1];
-    //}
 
     private createScaleneRightTrianglePoints(vertex1: any, vertex2: any): [any, any, any] {
         const guideLine = this.board.create('curve', [
@@ -990,7 +984,7 @@ export class Board {
         const vertex3 = this.createSlidingPoint(0, 0, guideLine);
         this.markRightAngle(vertex1, vertex3, vertex2);
 
-        this.boardScheme.addPolygonType([vertex1, vertex2, vertex3], PolygonType.SCALENE_RIGHT_TRIANGLE);
+        this.boardScheme.addPolygonType([vertex1, vertex2, vertex3], PolygonTypeEnum.SCALENE_RIGHT_TRIANGLE);
 
         return [vertex1, vertex2, vertex3];
     }
@@ -1001,7 +995,7 @@ export class Board {
             return vertex3Coords.usrCoords;
         });
 
-        this.boardScheme.addPolygonType([vertex1, vertex2, vertex3], PolygonType.EQUILATERAL_TRIANGLE);
+        this.boardScheme.addPolygonType([vertex1, vertex2, vertex3], PolygonTypeEnum.EQUILATERAL_TRIANGLE);
 
         return [vertex1, vertex2, vertex3];
     }
@@ -1028,7 +1022,7 @@ export class Board {
         
         const vertex3 = this.createSlidingPoint(0, 0, guideLine);
 
-        this.boardScheme.addPolygonType([vertex1, vertex2, vertex3], PolygonType.ISOSCELES_ACUTE_TRIANGLE);
+        this.boardScheme.addPolygonType([vertex1, vertex2, vertex3], PolygonTypeEnum.ISOSCELES_ACUTE_TRIANGLE);
        
         return [vertex1, vertex2, vertex3];
     }
@@ -1041,14 +1035,10 @@ export class Board {
 
         this.markRightAngle(vertex3, vertex1, vertex2);
 
-        this.boardScheme.addPolygonType([vertex1, vertex2, vertex3], PolygonType.ISOSCELES_RIGHT_TRIANGLE);
+        this.boardScheme.addPolygonType([vertex1, vertex2, vertex3], PolygonTypeEnum.ISOSCELES_RIGHT_TRIANGLE);
 
         return [vertex1, vertex2, vertex3];
     }
-
-    //private createObtuseScaleneTrianglePoints(vertex1: any, vertex2: any): [any, any, any] {
-    //    return [vertex1, vertex1, vertex1];
-    //}
     
     private createObtuseIsoscelesTrianglePoints(vertex1: any, vertex2: any): [any, any, any] {
         const guideLine = this.board.create('curve', [
@@ -1065,7 +1055,7 @@ export class Board {
 
         const vertex3 = this.createSlidingPoint(0, 0, guideLine);
 
-        this.boardScheme.addPolygonType([vertex1, vertex2, vertex3], PolygonType.OBTUSE_ISOSCELES_TRIANGLE);
+        this.boardScheme.addPolygonType([vertex1, vertex2, vertex3], PolygonTypeEnum.OBTUSE_ISOSCELES_TRIANGLE);
 
         return [vertex1, vertex2, vertex3];
     }
@@ -1091,7 +1081,7 @@ export class Board {
             return newUsrCoords;
         });
 
-        this.boardScheme.addPolygonType([vertex1, vertex2, vertex3, vertex4], PolygonType.SQUARE);
+        this.boardScheme.addPolygonType([vertex1, vertex2, vertex3, vertex4], PolygonTypeEnum.SQUARE);
 
         return [vertex1, vertex2, vertex3, vertex4];
     }
@@ -1123,7 +1113,7 @@ export class Board {
             return newUsrCoords;
         }); 
 
-        this.boardScheme.addPolygonType([vertex1, vertex2, vertex3, vertex4], PolygonType.RECTANGLE);
+        this.boardScheme.addPolygonType([vertex1, vertex2, vertex3, vertex4], PolygonTypeEnum.RECTANGLE);
 
         return [vertex1, vertex2, vertex3, vertex4];
     }
@@ -1141,7 +1131,7 @@ export class Board {
             }));
         }
 
-        this.boardScheme.addPolygonType(vertices, PolygonType.REGULAR_POLYGON);
+        this.boardScheme.addPolygonType(vertices, PolygonTypeEnum.REGULAR_POLYGON);
 
         return vertices;
     }
@@ -1164,7 +1154,7 @@ export class Board {
             return newUsrCoords;
         });
 
-        this.boardScheme.addPolygonType([vertex1, vertex2, vertex3, vertex4], PolygonType.PARALLELOGRAM);
+        this.boardScheme.addPolygonType([vertex1, vertex2, vertex3, vertex4], PolygonTypeEnum.PARALLELOGRAM);
 
         return [vertex1, vertex2, vertex3, vertex4];
     }
@@ -1182,7 +1172,7 @@ export class Board {
             return newUsrCoords;
         });
 
-        this.boardScheme.addPolygonType([vertex1, vertex2, vertex3, vertex4], PolygonType.KITE);
+        this.boardScheme.addPolygonType([vertex1, vertex2, vertex3, vertex4], PolygonTypeEnum.KITE);
 
         return [vertex1, vertex2, vertex3, vertex4];
     }
@@ -1212,23 +1202,23 @@ export class Board {
             return newUsrCoords;
         });
 
-        this.boardScheme.addPolygonType([vertex1, vertex2, vertex3, vertex4], PolygonType.RHOMBUS);
+        this.boardScheme.addPolygonType([vertex1, vertex2, vertex3, vertex4], PolygonTypeEnum.RHOMBUS);
 
         return [vertex1, vertex2, vertex3, vertex4];
     }
 
     private createTrapezoidPointsRequestData(vertex1: any, vertex2: any, vertex3: any): void {
         this.requestDataFromUser(RequestEnum.TRAPEZOID_TYPE, (data) => {
-            const castedData = data as { trapezoidType: PolygonType.SCALENE_TRAPEZOID | PolygonType.ISOSCELES_TRAPEZOID | PolygonType.RIGHT_TRAPEZOID };
+            const castedData = data as { trapezoidType: PolygonTypeEnum.SCALENE_TRAPEZOID | PolygonTypeEnum.ISOSCELES_TRAPEZOID | PolygonTypeEnum.RIGHT_TRAPEZOID };
 
             switch(castedData.trapezoidType) {
-                case PolygonType.SCALENE_TRAPEZOID:
+                case PolygonTypeEnum.SCALENE_TRAPEZOID:
                     this.createScaleneTrapezoidPoints(vertex1, vertex2, vertex3);
                     break;
-                case PolygonType.ISOSCELES_TRAPEZOID:
+                case PolygonTypeEnum.ISOSCELES_TRAPEZOID:
                     this.createIsoscelesTrapezoidPoints(vertex1, vertex2, vertex3);
                     break;
-                case PolygonType.RIGHT_TRAPEZOID:
+                case PolygonTypeEnum.RIGHT_TRAPEZOID:
                     this.createRightTrapezoidPoints(vertex1, vertex2, vertex3);
                     break;
                 default:
@@ -1257,7 +1247,7 @@ export class Board {
         
         const vertex4 = this.createSlidingPoint(0, 0, guideLine);
 
-        this.boardScheme.addPolygonType([vertex1, vertex2, vertex3, vertex4], PolygonType.SCALENE_TRAPEZOID);
+        this.boardScheme.addPolygonType([vertex1, vertex2, vertex3, vertex4], PolygonTypeEnum.SCALENE_TRAPEZOID);
 
         return [vertex1, vertex2, vertex3, vertex4];
     }
@@ -1274,7 +1264,7 @@ export class Board {
         });
 
         this.markEqualSegments([[vertex2, vertex3], [vertex4, vertex1]]);
-        this.boardScheme.addPolygonType([vertex1, vertex2, vertex3, vertex4], PolygonType.ISOSCELES_TRAPEZOID);
+        this.boardScheme.addPolygonType([vertex1, vertex2, vertex3, vertex4], PolygonTypeEnum.ISOSCELES_TRAPEZOID);
 
         return [vertex1, vertex2, vertex3, vertex4];
     }
@@ -1315,7 +1305,7 @@ export class Board {
         this.markRightAngle(vertex4, vertex1, vertex2);
         this.markRightAngle(vertex3, vertex4, vertex1);
 
-        this.boardScheme.addPolygonType([vertex1, vertex2, vertex3, vertex4], PolygonType.RIGHT_TRAPEZOID);
+        this.boardScheme.addPolygonType([vertex1, vertex2, vertex3, vertex4], PolygonTypeEnum.RIGHT_TRAPEZOID);
 
         return [vertex1, vertex2, vertex3, vertex4];
     }
@@ -1363,10 +1353,14 @@ export class Board {
 
     private addPerimeter(polygonPoints: any[], perimeter: string): void {
         var pointNames = '';
-        for(let i = 0; i < polygonPoints.length; i++) { pointNames += polygonPoints[i].name; }
+        var verticesIds: string[] = [];
+        for(let i = 0; i < polygonPoints.length; i++) { 
+            pointNames += polygonPoints[i].name; 
+            verticesIds.push(polygonPoints[i].id);
+        }
         const formula = 'P(' + pointNames + ') = ' + perimeter;
         
-        this.boardScheme.addFormula(formula);
+        this.boardScheme.setPolygonPerimeter(verticesIds, perimeter);
         this.enteredFormulas.push(
             this.board.create('text', [
                 0, 0, formula], 
@@ -1384,10 +1378,14 @@ export class Board {
 
     private addArea(polygonPoints: any[], area: string): void {
         var pointNames = '';
-        for(let i = 0; i < polygonPoints.length; i++) { pointNames += polygonPoints[i].name; }
+        var verticesIds: string[] = [];
+        for(let i = 0; i < polygonPoints.length; i++) { 
+            pointNames += polygonPoints[i].name; 
+            verticesIds.push(polygonPoints[i].id);
+        }
         const formula = 'A(' + pointNames + ') = ' + area;
         
-        this.boardScheme.addFormula(formula);
+        this.boardScheme.setPolygonArea(verticesIds, area);
         this.enteredFormulas.push(
             this.board.create('text', [
                 0, 0, formula], 
