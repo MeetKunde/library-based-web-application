@@ -1,6 +1,6 @@
 import { Component } from '@angular/core';
 import { MatDialogRef } from '@angular/material/dialog';
-import { PolygonTypeEnum } from '../board/shared-enums/PolygonTypeEnum';
+import { PolygonTypeEnum } from '../shared/enums/PolygonTypeEnum';
 
 export interface TrapezoidType {
   name: string;

@@ -4,6 +4,7 @@ import { BrowserModule } from '@angular/platform-browser';
 import { AppComponent } from './app.component';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { DashboardComponent } from './dashboard/dashboard.component';
+import { SolutionGraphComponent } from './dashboard/solution-graph/solution-graph.component';
 import { AppRoutingModule } from './app-routing.module';
 
 import { MatToolbarModule } from '@angular/material/toolbar'; 
@@ -24,6 +25,8 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatChipsModule } from '@angular/material/chips'
+import { MatExpansionModule} from '@angular/material/expansion';
+import { MatDividerModule } from '@angular/material/divider';
 
 import { InstructionSnackBarComponent } from './dashboard/snackbars/instructionSnackBar.component';
 import { InfoSnackBarComponent } from './dashboard/snackbars/infoSnackBar.component';
@@ -38,12 +41,14 @@ import { SetAreaDialogComponent } from './dashboard/dialogs/setArea.component';
 import { EnterPolygonSidesNumberDialogComponent } from './dashboard/dialogs/enterPolygonSidesNumberDialog.component';
 import { SelectTriangleTypeDialogComponent } from './dashboard/dialogs/selectTriangleTypeDialog.component';
 import { SelectTrapezoidTypeDialogComponent } from './dashboard/dialogs/selectTrapezoidTypeDialog.component';
+import { ConfigureSolutionDialogComponent } from './dashboard/dialogs/configureSolutionDialog.component';
 
 
 @NgModule({
   declarations: [
     AppComponent,
     DashboardComponent,
+    SolutionGraphComponent,
     InstructionSnackBarComponent,
     InfoSnackBarComponent,
     DivideSegmentDialogComponent,
@@ -57,6 +62,7 @@ import { SelectTrapezoidTypeDialogComponent } from './dashboard/dialogs/selectTr
     EnterPolygonSidesNumberDialogComponent,
     SelectTriangleTypeDialogComponent,
     SelectTrapezoidTypeDialogComponent,
+    ConfigureSolutionDialogComponent
   ],
   imports: [
     BrowserModule,
@@ -80,6 +86,8 @@ import { SelectTrapezoidTypeDialogComponent } from './dashboard/dialogs/selectTr
     MatDialogModule,
     MatProgressSpinnerModule,
     MatChipsModule,
+    MatExpansionModule,
+    MatDividerModule
   ],
   providers: [],
   bootstrap: [AppComponent]

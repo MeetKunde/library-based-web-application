@@ -2,12 +2,12 @@ import { Component } from '@angular/core';
 import { MatIconRegistry } from '@angular/material/icon';
 import { DomSanitizer } from '@angular/platform-browser';
 import { Board } from './board/Board'
-import { ActionEnum } from './board/ActionEnum';
+import { ActionEnum } from './shared/enums/ActionEnum';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatDialog } from '@angular/material/dialog';
 import { DivideSegmentDialogComponent } from './dialogs/divideSegmentDialog.component';
 import { InstructionSnackBarComponent } from './snackbars/instructionSnackBar.component';
-import { AnswearType, RequestEnum } from './board/RequestEnum';
+import { AnswearType, RequestEnum } from './shared/enums/RequestEnum';
 import { InfoSnackBarComponent } from './snackbars/infoSnackBar.component';
 import { DivideAngleDialogComponent } from './dialogs/divideAngleDialog.component';
 import { EnterFormulaDialogComponent } from './dialogs/enterFormula.component';
@@ -17,9 +17,11 @@ import { AngleIsConvexDialogComponent } from './dialogs/angleIsConvexDialog.comp
 import { SetPerimeterDialogComponent } from './dialogs/setPerimeter.component';
 import { SetAreaDialogComponent } from './dialogs/setArea.component';
 import { EnterPolygonSidesNumberDialogComponent } from './dialogs/enterPolygonSidesNumberDialog.component';
-import { ProcessExerciseService } from '../service/process-exercise.service';
+import { ProcessExerciseService } from './service/process-exercise/process-exercise.service';
 import { SelectTriangleTypeDialogComponent } from './dialogs/selectTriangleTypeDialog.component';
 import { SelectTrapezoidTypeDialogComponent } from './dialogs/selectTrapezoidTypeDialog.component';
+import { DashboardTrafficService } from './service/dashboard-traffic/dashboard-traffic.service';
+import { ConfigureSolutionDialogComponent } from './dialogs/configureSolutionDialog.component';
 
 
 @Component({
@@ -67,14 +69,14 @@ export class DashboardComponent {
     {name: 'trapezoid', tooltip: 'Create Trapezoid', imagePath: '../../assets/button-images/TrapezoidIcon.svg', actionToDo: ()=> { this.board?.changeAction(ActionEnum.CREATE_TRAPEZOID); this.openInstructionSnackBar(); }, highlightButton: () => { return this.board?.getAction() == ActionEnum.CREATE_TRAPEZOID; }},
     {name: 'intersection', tooltip: 'Create Intersection Point', imagePath: '../../assets/button-images/IntersectionIcon.svg', actionToDo: ()=> { this.board?.changeAction(ActionEnum.CREATE_INTERSECTION); this.openInstructionSnackBar(); }, highlightButton: () => { return this.board?.getAction() == ActionEnum.CREATE_INTERSECTION; }},
     {name: 'process', tooltip: 'Process Exercise', imagePath: '../../assets/button-images/ProcessIcon.svg', actionToDo: () => { this.processExercise(); }, highlightButton: () => { return false; }},
-    {name: 'save', tooltip: 'Save Exercise', imagePath: '../../assets/button-images/SaveIcon.svg', actionToDo: () => { this.saveScheme(); }, highlightButton: () => { return false; }},
-    {name: 'load', tooltip: 'Load Exercise', imagePath: '../../assets/button-images/LoadIcon.svg', actionToDo: () => { this.loadScheme(); }, highlightButton: () => { return false; }},
+    //{name: 'save', tooltip: 'Save Exercise', imagePath: '../../assets/button-images/SaveIcon.svg', actionToDo: () => { this.saveScheme(); }, highlightButton: () => { return false; }},
+    //{name: 'load', tooltip: 'Load Exercise', imagePath: '../../assets/button-images/LoadIcon.svg', actionToDo: () => { this.loadScheme(); }, highlightButton: () => { return false; }},
     {name: 'clear', tooltip: 'Clear Board', imagePath: '../../assets/button-images/DeleteIcon.svg', actionToDo: () => { this.reinitializeBoard(); }, highlightButton: () => { return false; }},
   ];
 
   board: Board | undefined;
   tabLabel: string;
-  solutionIsLoading: boolean;
+  solutionIsLoading: boolean;  
 
   private boardId = 'jxgbox';
   private bounds: [number, number, number, number] = [-100, 100, 100, -100];
@@ -83,10 +85,11 @@ export class DashboardComponent {
   private keepAspectRatio = true;
 
   constructor(
+    public _dialog: MatDialog,
+    private _snackBar: MatSnackBar,
     private _matIconRegistry: MatIconRegistry,
     private _domSanitizer: DomSanitizer,
-    private _snackBar: MatSnackBar,
-    public _dialog: MatDialog,
+    private _dashboardTraffic: DashboardTrafficService,
     private _processExerciseService: ProcessExerciseService) { 
       this.tabLabel = 'exercise';
       this.solutionIsLoading = false;
@@ -104,6 +107,10 @@ export class DashboardComponent {
 
   setTab(label: string) {
     this.tabLabel = label;
+  }
+
+  configureSolution() {
+    this.openConfigureDialog();
   }
 
   openInstructionSnackBar() {
@@ -231,6 +238,14 @@ export class DashboardComponent {
     });
   }
 
+  private openConfigureDialog = (): void => {
+    const dialogRef = this._dialog.open(ConfigureSolutionDialogComponent);
+
+    dialogRef.afterClosed().subscribe(result => {
+      if(result) { this._dashboardTraffic.filterDependencies(result); }
+    });
+  }
+
   processExercise() {
     if(this.board === undefined) { return; }
 
@@ -241,7 +256,7 @@ export class DashboardComponent {
       this._processExerciseService.compute(this.board!.getScheme()).subscribe(
         response => {
           this.solutionIsLoading = false;
-          console.log(response);
+          setTimeout(() => { this._dashboardTraffic.createSolutionGraph(response); }, 250)
         },
         error => {
             this.setTab('exercise');
@@ -253,13 +268,9 @@ export class DashboardComponent {
     }, 500);
   }
 
-  saveScheme() {
-    console.log(JSON.stringify(this.board?.getScheme()));
-  }
+  //saveScheme() { console.log(JSON.stringify(this.board?.getScheme())); }
 
-  loadScheme() {
-    console.log(JSON.stringify(this.board?.getScheme()));
-  }
+  //loadScheme() { console.log(JSON.stringify(this.board?.getScheme())); }
 
   reinitializeBoard() {
     this.board?.detach();

@@ -7,12 +7,24 @@
             </button>
         </div>
 
-        <div [hidden]="tabLabel != 'solution'" clas="grid-container">
+        <div [hidden]="tabLabel != 'solution' && tabLabel != 'exercise-solution'" clas="grid-container">
             <div class="grid-container">
                 <button mat-icon-button class="creator-icon-button">
                     <mat-icon></mat-icon>
                 </button>
             </div>
+
+            <button mat-raised-button type="submit" (click)="configureSolution();">Configure</button>
+
+            <div class="grid-container">
+                <button mat-icon-button class="creator-icon-button">
+                    <mat-icon></mat-icon>
+                </button>
+            </div>
+
+            <button [hidden]="tabLabel != 'solution'"  mat-raised-button type="submit" (click)="setTab('exercise-solution');">Show Exercise</button>
+
+            <button [hidden]="tabLabel != 'exercise-solution'"  mat-raised-button type="submit" (click)="setTab('solution');">Hide Exercise</button>
 
         </div>
 
@@ -46,22 +58,25 @@
     </mat-sidenav>
     <mat-sidenav-content class="content-container"> 
 
-        <mat-card class="main-content">
-            <div id="jxgbox" class="mat-elevation-z8 jxgbox-board" style="width: 100%; height: 100%"></div>
+        <mat-card [hidden]="tabLabel != 'exercise' && tabLabel != 'exercise-solution'" class="main-content">
+            <div id="jxgbox" class="mat-elevation-z8 jxgbox-board" style="width: 100%; height: 100%; overflow: hidden;"></div>
         </mat-card>
 
-        <mat-card [hidden]="tabLabel != 'solution'" class="main-content">
+        <mat-card [hidden]="tabLabel != 'solution' && tabLabel != 'exercise-solution'" class="main-content">
             <div *ngIf="solutionIsLoading" class="spinner-container">
                 <mat-spinner></mat-spinner>
             </div>
-            <div *ngIf="!solutionIsLoading">
-                Solution Presenting
+            <div *ngIf="!solutionIsLoading" style="width: 100%; height: 100%; ">
+                <app-solution-graph></app-solution-graph>
             </div>
+        </mat-card>
+
+        <mat-card [hidden]="tabLabel != 'settings'" class="main-content">
         </mat-card>
 
         <div class="tab-labels">
             <button mat-flat-button [class.vertical-tab-button]="tabLabel != 'exercise'" [class.vertical-tab-button-selected]="tabLabel == 'exercise'" (click)="setTab('exercise');">Excercise</button>
-            <button mat-flat-button [class.vertical-tab-button]="tabLabel != 'solution'" [class.vertical-tab-button-selected]="tabLabel == 'solution'" class="vertical-tab-button" (click)="setTab('solution');">Solution</button>
+            <button mat-flat-button [class.vertical-tab-button]="tabLabel != 'solution'" [class.vertical-tab-button-selected]="tabLabel == 'solution' || tabLabel == 'exercise-solution'" class="vertical-tab-button" (click)="setTab('solution');">Solution</button>
             <button mat-flat-button [class.vertical-tab-button]="tabLabel != 'settings'" [class.vertical-tab-button-selected]="tabLabel == 'settings'" class="vertical-tab-button" (click)="setTab('settings');">Settings</button>
         </div>
 

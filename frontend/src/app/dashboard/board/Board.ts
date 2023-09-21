@@ -1,10 +1,10 @@
-import { ActionEnum } from "./ActionEnum";
-import { AngleTypeEnum } from "./shared-enums/AngleTypeEnum";
-import { PolygonTypeEnum } from "./shared-enums/PolygonTypeEnum";
+import { ActionEnum } from "../shared/enums/ActionEnum";
+import { AngleTypeEnum } from "../shared/enums/AngleTypeEnum";
+import { PolygonTypeEnum } from "../shared/enums/PolygonTypeEnum";
 import { BoardScheme } from "./BoardScheme";
-import { BoardSchemeJson } from "./BoardSchemeJson";
+import { BoardSchemeJson } from "../shared/BoardSchemeJson";
 import { Colors, Naming, Options, Sizes } from "./Config";
-import { AnswearType, RequestEnum } from "./RequestEnum";
+import { AnswearType, RequestEnum } from "../shared/enums/RequestEnum";
 import { xCoord, yCoord, distance, genRandom, isCircle, isIntersectionPoint, isLine, isPoint } from "./Utils";
 
 declare const JXG: any 
