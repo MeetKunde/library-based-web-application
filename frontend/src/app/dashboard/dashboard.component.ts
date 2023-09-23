@@ -253,7 +253,7 @@ export class DashboardComponent {
     this.solutionIsLoading = true;
     
     setTimeout(() => {
-      this._processExerciseService.compute(this.board!.getScheme()).subscribe(
+      this._processExerciseService.compute(this.board!.getScheme()).subscribe(      
         response => {
           this.solutionIsLoading = false;
           setTimeout(() => { this._dashboardTraffic.createSolutionGraph(response); }, 250)

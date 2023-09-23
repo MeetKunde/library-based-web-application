@@ -73,20 +73,20 @@ export class SolutionGraphComponent implements AfterViewInit{
 
   private preprocessSolution(solution: SolutionSchemeJson): [any[], any[]] {
     var allDependencies: any[] = [];
-    for(const group of solution["dependencies"]) {
-      const dependencies = group["dependencies"];
-      for(const dependency of dependencies) {
-        const category: DependencyCategoryEnum = dependency["category"];
-        const type: DependencyTypeEnum = dependency["type"];
-        const reason: DependencyReasonEnum = dependency["reason"];
-        const importance: DependencyImportanceEnum = dependency["importance"];
+    for(const dependency in solution["dependencies"]) {
+      console.log(dependency);
+      /*
+      const category: DependencyCategoryEnum = dependency["category"];
+      const type: DependencyTypeEnum = dependency["type"];
+      const reason: DependencyReasonEnum = dependency["reason"];
+      const importance: DependencyImportanceEnum = dependency["importance"];
 
-        if(this.dependencyFeatures[0].includes(category) && this.dependencyFeatures[1].includes(type) &&
-           this.dependencyFeatures[2].includes(reason) && this.dependencyFeatures[3].includes(importance)) {
-          
-          allDependencies.push(dependency);
-        }
+      if(this.dependencyFeatures[0].includes(category) && this.dependencyFeatures[1].includes(type) &&
+          this.dependencyFeatures[2].includes(reason) && this.dependencyFeatures[3].includes(importance)) {
+        
+        allDependencies.push(dependency);
       }
+      */
     }
 
     console.log(allDependencies)
