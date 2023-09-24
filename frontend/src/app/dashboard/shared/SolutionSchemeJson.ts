@@ -1,6 +1,7 @@
 import { 
     PointJson, LineJson, CircleJson 
 } from "./CommonJsons"
+import { AngleTypeEnum } from "./enums/AngleTypeEnum";
 import { DependencyCategoryEnum } from "./enums/DependencyCategoryEnum";
 import { DependencyImportanceEnum } from "./enums/DependencyImportanceEnum";
 import { DependencyReasonEnum } from "./enums/DependencyReasonEnum";
@@ -22,49 +23,55 @@ export interface DependencyTemplate<Object1Type, Object2Type> {
     id: number;
     category: DependencyCategoryEnum;
     type: DependencyTypeEnum;
-    reason: DependencyReasonEnum;
-    basedOn: number[];
-    importance: DependencyImportanceEnum;
+    reasons: DependencyReasonEnum[];
+    dependentDependencies: number[][];
+    importances: DependencyImportanceEnum[];
 }
 
-export interface IdHolder {
-    id: number;
+export interface IdHolderObject {
+    id: string;
 }
 
-
-export interface PointModelRecord {
-   
+export interface AngleModelObject {
+    point1Id: string;
+    vertexId: string;
+    point2Id: string;
+    type: AngleTypeEnum;
 }
 
-
-export interface LineModelRecord {
-    
+export interface PointsPairModelObject {
+    end1Id: string;
+    end2Id: string;
 }
 
-
-export interface CircleModelRecord {
-    
+export interface ExpressionModelObject {
+    value: string;
+    variables: string[];
 }
 
-export interface AngleModel {
-    
+export interface PolygonModelObject {
+    verticesIds: string[];
 }
 
-export interface PointsPairModel {
-    
+export interface ModelsPairModelObject<Type> {
+    first: Type;
+    second: Type;
 }
 
-export interface Formula {
-    
-}
+export type EquationDependency = DependencyTemplate<ExpressionModelObject, ExpressionModelObject>;
 
-export interface PolygonModel {
-    
-}
-
-export interface ModelsPairModel<Type> {
-    
-}
+export type Dependency = 
+(
+    EquationDependency |
+    DependencyTemplate<PolygonModelObject, PolygonTypeEnum> |
+    DependencyTemplate<IdHolderObject, IdHolderObject> |
+    DependencyTemplate<PointsPairModelObject, PointsPairModelObject> |
+    DependencyTemplate<AngleModelObject, AngleModelObject> |
+    DependencyTemplate<IdHolderObject, AngleModelObject> |
+    DependencyTemplate<IdHolderObject, PolygonModelObject> |
+    DependencyTemplate<IdHolderObject, PointsPairModelObject> |
+    DependencyTemplate<PolygonModelObject, PolygonModelObject>
+)
 
 export interface SolutionSchemeJson {
     points: PointJson[],
@@ -72,14 +79,5 @@ export interface SolutionSchemeJson {
     cicles: CircleJson[],
     intersections: Intersections,
     indexes_of_variables: string[][],
-    dependencies: DependencyTemplate<Formula, Formula> |
-                  DependencyTemplate<PolygonModel, PolygonTypeEnum> |
-                  DependencyTemplate<IdHolder, IdHolder> |
-                  DependencyTemplate<PointsPairModel, PointsPairModel> |
-                  DependencyTemplate<AngleModel, AngleModel> |
-                  DependencyTemplate<IdHolder, AngleModel> |
-                  DependencyTemplate<IdHolder, PolygonModel> |
-                  DependencyTemplate<IdHolder, PointsPairModel> |
-                  DependencyTemplate<PolygonModel, PolygonModel> |
-                  DependencyTemplate<ModelsPairModel<PointsPairModel>, PointsPairModel>[]
+    dependencies: Dependency[]
 }

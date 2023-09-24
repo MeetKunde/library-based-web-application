@@ -1,13 +1,25 @@
-import { AfterViewInit, ChangeDetectorRef, Component, ElementRef, OnInit, ViewChild } from '@angular/core';
-import { SolutionSchemeJson } from '../shared/SolutionSchemeJson';
+import { AfterViewInit, Component, ElementRef, ViewChild } from '@angular/core';
+import { Dependency, EquationDependency, SolutionSchemeJson } from '../shared/SolutionSchemeJson';
 import { DashboardTrafficService } from '../service/dashboard-traffic/dashboard-traffic.service';
-import { Colors, Sizes } from './Config';
+import { Colors, NetworkSimulation } from './Config';
 import { DependencyImportanceEnum } from '../shared/enums/DependencyImportanceEnum';
 import { DependencyCategoryEnum } from '../shared/enums/DependencyCategoryEnum';
 import { DependencyTypeEnum } from '../shared/enums/DependencyTypeEnum';
 import { DependencyReasonEnum } from '../shared/enums/DependencyReasonEnum';
 
 declare const d3: any;
+
+interface NodeStructure {
+  id: number,
+  title: string,
+  reasons: string[]
+}
+
+interface LinkStructure {
+  id: number,
+  source: number,
+  target: number,
+}
 
 @Component({
   selector: 'app-solution-graph',
@@ -19,14 +31,18 @@ export class SolutionGraphComponent implements AfterViewInit{
   
   private host: any;
   private htmlElement: any;
-  private svg: any;
+  private svg: any = null;
 
-  private solution: SolutionSchemeJson | null;
-  private dependencyFeatures: [DependencyCategoryEnum[], DependencyTypeEnum[], DependencyReasonEnum[], DependencyImportanceEnum[]];
+  private static solution: SolutionSchemeJson | null;
+  private static dependencyFeatures: [DependencyCategoryEnum[], DependencyTypeEnum[], DependencyReasonEnum[], DependencyImportanceEnum[]];
+  private static initialized: boolean = false;
 
   constructor(private _dashboardTraffic: DashboardTrafficService) {
-    this.solution = null;
-    this.dependencyFeatures = [this.getAllEnumCategories(), this.getAllEnumTypes(), this.getAllEnumReasons(), this.getAllEnumImportances()];
+    if(!SolutionGraphComponent.initialized) {
+      SolutionGraphComponent.solution = null;
+      SolutionGraphComponent.dependencyFeatures = [this.getAllEnumCategories(), this.getAllEnumTypes(), this.getAllEnumReasons(), this.getAllEnumImportances()];
+      SolutionGraphComponent.initialized = true;
+    }
   }
 
   ngAfterViewInit(): void {
@@ -34,13 +50,13 @@ export class SolutionGraphComponent implements AfterViewInit{
     this.host = d3.select(this.htmlElement);
 
     this._dashboardTraffic.solutionSubscriber$.subscribe(data => {
-      this.solution = data as SolutionSchemeJson | null;
+      SolutionGraphComponent.solution = data as SolutionSchemeJson | null;
 
       this.updateView();
     });
 
     this._dashboardTraffic.dependenciesFilterSubscriber$.subscribe(data => {
-      this.dependencyFeatures = data as [DependencyCategoryEnum[], DependencyTypeEnum[], DependencyReasonEnum[], DependencyImportanceEnum[]];
+      SolutionGraphComponent.dependencyFeatures = data as [DependencyCategoryEnum[], DependencyTypeEnum[], DependencyReasonEnum[], DependencyImportanceEnum[]];
 
       this.updateView();
     })
@@ -63,86 +79,160 @@ export class SolutionGraphComponent implements AfterViewInit{
   }
 
   private updateView(): void {
-    if(this.solution === null) {
+    if(SolutionGraphComponent.solution === null) {
       this.createSolutionGraph([], []);
     }
     else {
-      this.createSolutionGraph(...this.preprocessSolution(this.solution));
+      this.createSolutionGraph(...this.preprocessSolution(SolutionGraphComponent.solution));
     }
   }
 
-  private preprocessSolution(solution: SolutionSchemeJson): [any[], any[]] {
-    var allDependencies: any[] = [];
-    for(const dependency in solution["dependencies"]) {
-      console.log(dependency);
-      /*
-      const category: DependencyCategoryEnum = dependency["category"];
-      const type: DependencyTypeEnum = dependency["type"];
-      const reason: DependencyReasonEnum = dependency["reason"];
-      const importance: DependencyImportanceEnum = dependency["importance"];
-
-      if(this.dependencyFeatures[0].includes(category) && this.dependencyFeatures[1].includes(type) &&
-          this.dependencyFeatures[2].includes(reason) && this.dependencyFeatures[3].includes(importance)) {
-        
-        allDependencies.push(dependency);
+  private arraysIntersection<ArrayType>(arr1: ArrayType[], arr2: ArrayType[]): ArrayType[] {
+    var result: ArrayType[] = [];
+    for(const el1 of arr1) {
+      for(const el2 of arr2) {
+        if(el1 == el2) { result.push(el1); }
       }
-      */
     }
 
-    console.log(allDependencies)
+    return result;
+  }
 
-    var nodes: any[] = [];
-    var links: any[] = [];
+  private dependencyName(dependecy: Dependency): string {
+    switch(dependecy.type) {
+      case DependencyTypeEnum.SEGMENT_LENGTH:
+         const segmentLength = dependecy as EquationDependency;
+         return segmentLength.object1.value + " = " + segmentLength.object2.value;
+      case DependencyTypeEnum.ANGLE_MEASURE:
+        const angleMeasure = dependecy as EquationDependency;
+        return angleMeasure.object1.value + " = " + angleMeasure.object2.value;
+      case DependencyTypeEnum.EQUATION:
+        const equation = dependecy as EquationDependency;
+        return equation.object1.value + " = " + equation.object2.value;
+      default:
+        return "Default";
+      //case DependencyTypeEnum.POLYGON_TYPE:
+      //case DependencyTypeEnum.POLYGON_PERIMETER:
+      //case DependencyTypeEnum.POLYGON_AREA:
+      //case DependencyTypeEnum.EQUAL_SEGMENTS:
+      //case DependencyTypeEnum.EQUAL_ANGLES:
+      //case DependencyTypeEnum.PERPENDICULAR_LINES:
+      //case DependencyTypeEnum.PARALLEL_LINES:
+      //case DependencyTypeEnum.TANGENT_LINE_TO_CIRCLE:
+      //case DependencyTypeEnum.TANGENT_CIRCLE_TO_CIRCLE:
+      //case DependencyTypeEnum.BISECTOR_LINE:
+      //case DependencyTypeEnum.MID_PERPENDICULAR_LINE:
+      //case DependencyTypeEnum.INSCRIBED_CIRCLE:
+      //case DependencyTypeEnum.CIRCUMSCRIBED_CIRCLE:
+      //case DependencyTypeEnum.ESCRIBED_CIRCLE:
+      //case DependencyTypeEnum.MEDIAN:
+      //case DependencyTypeEnum.ALTITUDE:
+      //case DependencyTypeEnum.MID_SEGMENT:
+      //case DependencyTypeEnum.SIMILAR_TRIANGLES:
+      //case DependencyTypeEnum.CONGRUENT_TRIANGLES:
+    }
+  }
 
+  private preprocessSolution(solution: SolutionSchemeJson): [NodeStructure[], LinkStructure[]] {
+    if(solution.dependencies === null) { return [[], []]; }
+
+    var dependentDependenciesSet = new Set<number>();
+    for(const dependency of solution.dependencies) {
+      dependency.dependentDependencies.forEach((dd: number[]) => dd.forEach((id: number) => dependentDependenciesSet.add(id)));
+    }
+
+    var filteredDependencies: Dependency[] = [];
+    for(const dependency of solution.dependencies) {
+      const category: DependencyCategoryEnum = dependency.category;
+      const type: DependencyTypeEnum = dependency.type;
+      const reasons: DependencyReasonEnum[] = dependency.reasons;
+      const importances: DependencyImportanceEnum[] = dependency.importances;
+
+      if(dependentDependenciesSet.has(dependency.id)) {
+        filteredDependencies.push(dependency)
+      }
+      else if(SolutionGraphComponent.dependencyFeatures[0].includes(category) && SolutionGraphComponent.dependencyFeatures[1].includes(type) &&
+        this.arraysIntersection<DependencyReasonEnum>(SolutionGraphComponent.dependencyFeatures[2], reasons).length > 0 &&
+        this.arraysIntersection<DependencyImportanceEnum>(SolutionGraphComponent.dependencyFeatures[3], importances).length > 0) {
+          filteredDependencies.push(dependency);
+      }
+    }
     
+    var nodes: NodeStructure[] = [];
+    var links: LinkStructure[] = [];
+
+    for(const dependecy of filteredDependencies) {
+      nodes.push({
+        id: dependecy.id, 
+        title: this.dependencyName(dependecy), 
+        reasons: ["Reason 1", "Reason 2", "Reason 3"],
+      });
+    }
+
+    links.push({
+      id: 0,
+      source: 0,
+      target: 1,
+    });
+
+    links.push({
+      id: 1,
+      source: 2,
+      target: 3,
+    });
+
+    links.push({
+      id: 2,
+      source: 0,
+      target: 3,
+    });
 
     return [nodes, links];
   }
 
-  private createSolutionGraph(nodes: any[], links: any[]) {
-
-
-
+  private createSolutionGraph(nodes: NodeStructure[], links: LinkStructure[]) {
     const width = this.element.nativeElement.offsetWidth;
     const height = this.element.nativeElement.offsetHeight;
 
-    const nodeRadius = Math.min(width, height) * Sizes.NODE_RADIUS_MULTIPLIER;
+    const nodeRadius = Math.min(width, height) * NetworkSimulation.NODE_RADIUS_MULTIPLIER;
+    const nodesDistance = Math.min(width, height) * NetworkSimulation.NODES_DISTANCE_MULTIPLIER;
 
-    this.svg = this.host.append("svg")
-      .attr("viewBox", "0 0 " + width + " " + height)
-      .append("g")
-    
-    
-    
+    if(this.svg === null) {
+      var svgContainer = this.host.append("svg")
+        .attr("width", width)
+        .attr("height", height);
+
+      this.svg = svgContainer.append("g")
+        .attr("width", width)
+        .attr("height", height)
+        
+      svgContainer.call(d3.zoom().on('zoom', (e: any) => { this.svg.attr('transform', e.transform); }));
+    }
+    else {
+      this.svg.selectAll("*").remove();
+    }
+   
     const simulation = d3
       .forceSimulation(nodes)
-      .force('link', d3.forceLink(links).id((d: any) => d['id']).distance(100))
-      .force('charge', d3.forceManyBody().strength(-200))
+      .force('link', d3.forceLink(links).id((d: any) => d['id']).distance(nodesDistance))
+      .force('charge', d3.forceManyBody().strength(NetworkSimulation.CHARGE_STRENGTH))
       .force('center', d3.forceCenter(width / 2, height / 2));
 
-    const link = this.svg
-      .selectAll('.link')
+    const link = this.svg.selectAll("link")
       .data(links)
       .enter()
-      .append('line')
-      .attr('class', 'link');
+      .append("line")
+      .attr("stroke", Colors.PRIMARY)
+      .attr("stroke-width", NetworkSimulation.LINK_WIDTH + "px");
 
-    const node = this.svg
-      .selectAll('.node')
-      .data(nodes)
-      .enter()
-      .append('circle')
-      .attr('class', 'node')
-      .style("fill", function (d: any) { return Colors.PRIMARY; })
-      .attr('r', 20)
-      .on('click', (event: any, d: any) => {
-        // Toggle highlight on click
-        d3.select(event.target).classed('highlighted', (d: any) => !d3.select(event.target).classed('highlighted'));
-        link.classed('highlighted', (l: any) => l.source === d || l.target === d);
-      })
+    const nodeGroups = this.svg.selectAll("g")
+      .data(nodes, (d: any) => d.id);
+
+    const nodeGroup = nodeGroups.enter()
+      .append("g")
+      .attr("transform", (d: any) => `translate(${d.x}, ${d.y})`)
       .call(
-        d3
-          .drag()
+        d3.drag()
           .on('start', (event: any, d: any) => {
             if (!event.active) simulation.alphaTarget(0.3).restart();
             d.fx = d.x;
@@ -157,20 +247,30 @@ export class SolutionGraphComponent implements AfterViewInit{
             d.fx = null;
             d.fy = null;
           })
-      );
-    
-    simulation.on('tick', () => {
+      )
+      .on("mouseover", (event: any) => d3.select(event.currentTarget).select("circle").style("fill", Colors.SECONDARY))
+      .on("mouseout", (event: any) => d3.select(event.currentTarget).select("circle").style("fill", Colors.TERTIARY));
+
+    nodeGroup.append("circle")
+      .attr("r", nodeRadius)
+      .style("fill", Colors.TERTIARY);
+
+    nodeGroup.append("text")
+      .attr("x", 0)
+      .attr("y", 0)
+      .attr("dy", "0.3em")
+      .style("text-anchor", "middle")
+      .text((d: any) => d.title); 
+
+    simulation.on("tick", function(e: any) {     
+      nodeGroup
+          .attr("transform", (d: any) => `translate(${d.x},${d.y})`);
+
       link
-        .attr('x1', (d: any) => d.source.x)
-        .attr('y1', (d: any) => d.source.y)
-        .attr('x2', (d: any) => d.target.x)
-        .attr('y2', (d: any) => d.target.y);
-
-      node.attr('cx', (d: any) => d.x).attr('cy', (d: any) => d.y);
-    });
-  }
-
-  private generateNode(radius: number): void {
-
+        .attr("x1", function(d: any) { return d.source.x; })
+        .attr("y1", function(d: any) { return d.source.y; })
+        .attr("x2", function(d: any) { return d.target.x; })
+        .attr("y2", function(d: any) { return d.target.y; });
+      });
   }
 }
