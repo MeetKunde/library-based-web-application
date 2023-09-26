@@ -59,18 +59,34 @@ export interface ModelsPairModelObject<Type> {
 }
 
 export type EquationDependency = DependencyTemplate<ExpressionModelObject, ExpressionModelObject>;
+export type PolygonTypeDependency = DependencyTemplate<PolygonModelObject, PolygonTypeEnum>;
+export type PolygonExpressionDependency = DependencyTemplate<PolygonModelObject, ExpressionModelObject>;
+export type PointsPairsDependency = DependencyTemplate<PointsPairModelObject, PointsPairModelObject>;
+export type AnglesDependency = DependencyTemplate<AngleModelObject, AngleModelObject>;
+export type LinesDependency = DependencyTemplate<IdHolderObject, IdHolderObject>;
+export type LineCircleDependency = DependencyTemplate<IdHolderObject, IdHolderObject>;
+export type CirclesDependency = DependencyTemplate<IdHolderObject, IdHolderObject>;
+export type LineAngleDependency = DependencyTemplate<IdHolderObject, AngleModelObject>;
+export type LinePointsPairDependency = DependencyTemplate<IdHolderObject, PointsPairModelObject>;
+export type CirclePolygonDependency = DependencyTemplate<IdHolderObject, PolygonModelObject>;
+export type PolygonPointsPairDependency = DependencyTemplate<PolygonModelObject, PointsPairModelObject>;
+export type PolygonsDependency = DependencyTemplate<PolygonModelObject, PolygonModelObject>;
 
 export type Dependency = 
 (
     EquationDependency |
-    DependencyTemplate<PolygonModelObject, PolygonTypeEnum> |
-    DependencyTemplate<IdHolderObject, IdHolderObject> |
-    DependencyTemplate<PointsPairModelObject, PointsPairModelObject> |
-    DependencyTemplate<AngleModelObject, AngleModelObject> |
-    DependencyTemplate<IdHolderObject, AngleModelObject> |
-    DependencyTemplate<IdHolderObject, PolygonModelObject> |
-    DependencyTemplate<IdHolderObject, PointsPairModelObject> |
-    DependencyTemplate<PolygonModelObject, PolygonModelObject>
+    PolygonTypeDependency |
+    PolygonExpressionDependency |
+    PointsPairsDependency |
+    AnglesDependency |
+    LinesDependency |
+    LineCircleDependency | 
+    CirclesDependency |
+    LineAngleDependency |
+    LinePointsPairDependency |
+    CirclePolygonDependency |
+    PolygonPointsPairDependency |
+    PolygonsDependency
 )
 
 export interface SolutionSchemeJson {
