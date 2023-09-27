@@ -34,6 +34,7 @@ export class SolutionGraphComponent implements AfterViewInit{
   private host: any;
   private htmlElement: any;
   private svg: any = null;
+  private nodesToHighlight: { [linkOrNodeId: string] : string[]; } = {};
 
   private static solution: SolutionSchemeJson | null;
   private static dependencyFeatures: [DependencyCategoryEnum[], DependencyTypeEnum[], DependencyReasonEnum[], DependencyImportanceEnum[]];
@@ -101,7 +102,7 @@ export class SolutionGraphComponent implements AfterViewInit{
   }
 
   private getPointName(pointId: string): string {
-    return SolutionGraphComponent.solution!.points.filter((point) => point.id === pointId)[0].name;
+    return SolutionGraphComponent.solution!.points.filter((point) => point.object.id === pointId)[0].object.name;
   }
 
   private getSegmentName(end1Id: string, end2Id: string): string {
@@ -117,13 +118,13 @@ export class SolutionGraphComponent implements AfterViewInit{
   }
 
   private getLineName(lineId: string): string {
-    const pointOnLine = SolutionGraphComponent.solution!.lines.filter((line) => line.id === lineId)[0].pointsOn;
+    const pointOnLine = SolutionGraphComponent.solution!.lines.filter((line) => line.object.id === lineId)[0].object.pointsOn;
     return "line" + this.getPointName(pointOnLine[0]) + this.getPointName(pointOnLine[pointOnLine.length - 1]);
   }
 
   private getCircleName(circleId: string): string {
-    const circleCenter = SolutionGraphComponent.solution!.cicles.filter((circle) => circle.id === circleId)[0].centerId;
-    const pointsOnCircle = SolutionGraphComponent.solution!.cicles.filter((circle) => circle.id === circleId)[0].pointsOn;
+    const circleCenter = SolutionGraphComponent.solution!.cicles.filter((circle) => circle.object.id === circleId)[0].object.centerId;
+    const pointsOnCircle = SolutionGraphComponent.solution!.cicles.filter((circle) => circle.object.id === circleId)[0].object.pointsOn;
     return "O(" + this.getPointName(circleCenter) + "," + this.getPointName(pointsOnCircle[0]) + ")";
   }
 
@@ -166,7 +167,7 @@ export class SolutionGraphComponent implements AfterViewInit{
         return equation.object1.value + " = " + equation.object2.value;
       case DependencyTypeEnum.POLYGON_TYPE:
         const polygonType = dependecy as PolygonTypeDependency;
-        return this.getPolygonName(polygonType.object1.verticesIds) + " is " + this.getPolygonTypeName(polygonType.object2);  
+        return this.getPolygonName(polygonType.object2.verticesIds) + " is " + this.getPolygonTypeName(parseInt(polygonType.object1.id));  
       case DependencyTypeEnum.POLYGON_PERIMETER:
         const polygonPerimeter = dependecy as PolygonExpressionDependency;
         return "P(" + this.getPolygonName(polygonPerimeter.object1.verticesIds) + ")" + polygonPerimeter.object2;
@@ -289,6 +290,8 @@ export class SolutionGraphComponent implements AfterViewInit{
   private preprocessSolution(solution: SolutionSchemeJson): [NodeStructure[], LinkStructure[]] {
     if(solution.dependencies === null) { return [[], []]; }
 
+    console.log(solution)
+
     var dependentDependenciesSet = new Set<number>();
     for(const dependency of solution.dependencies) {
       dependency.dependentDependencies.forEach((dd: number[]) => dd.forEach((id: number) => dependentDependenciesSet.add(id)));
@@ -320,17 +323,31 @@ export class SolutionGraphComponent implements AfterViewInit{
         title: this.getDependencyName(dependecy), 
       });
 
+      var allRelatedNodes: string[] = [];
+      var dependenciesToProcess: number[] = ([] as number[]).concat(...dependecy.dependentDependencies);
+      while(dependenciesToProcess.length > 0) {
+        const depId: number = dependenciesToProcess.pop()!;
+        allRelatedNodes.push(`node${depId}`);
+        const dep: Dependency = SolutionGraphComponent.solution?.dependencies.filter((d: Dependency) => d.id === depId)[0]!;
+        dependenciesToProcess.concat(...dep.dependentDependencies);
+      }
+      this.nodesToHighlight[`node${dependecy.id}`] = allRelatedNodes;
+
       for(let index = 0; index < dependecy.dependentDependencies.length; index++) {
         const dependentDependencyArr = dependecy.dependentDependencies[index];
         const reason = dependecy.reasons[index];
 
+        const allSources: string[] = dependentDependencyArr.map((dependentDependencyIndex: number) => `node${dependentDependencyIndex}`);
+        const allSourcesAndTarget = [...allSources, `node${dependecy.id}`];
+
         for(const dependentDependencyIndex of dependentDependencyArr) {
           links.push({
             id: `link${dependecy.id}@${dependentDependencyIndex}`,
-            source: `node${dependecy.id}`,
-            target: `node${dependentDependencyIndex}`,
-            label: this.getReasonName(reason)
-          })
+            source: `node${dependentDependencyIndex}`,
+            target: `node${dependecy.id}`,
+            label: this.getReasonName(reason),
+          });
+          this.nodesToHighlight[`link${dependecy.id}@${dependentDependencyIndex}`] = allSourcesAndTarget;
         }
       }
     }
@@ -380,6 +397,7 @@ export class SolutionGraphComponent implements AfterViewInit{
       .data(links)
       .enter()
       .append("text")
+      .attr('id', (d: any) => d.id)
       .attr('class', 'link-label')
       .attr("dy", ".3em")
       .attr("x", function(d: any) { return (d.source.x + d.target.x)/2; })
@@ -387,12 +405,25 @@ export class SolutionGraphComponent implements AfterViewInit{
       .text(function(d: any) { return d.label; })
       .attr("text-anchor", "middle")
       .style("font-size", linkLabelFontSize + "px")
-      .style("fill", Colors.PRIMARY);
+      .style("fill", Colors.PRIMARY)
+      .on("mouseover", (event: any) => {
+        d3.select(event.currentTarget).style("fill", Colors.SECONDARY)
+        for(const id of this.nodesToHighlight[event.currentTarget.id]) {
+          this.svg.select("#" + id).style("fill", Colors.SECONDARY);
+        }
+      })
+      .on("mouseout", (event: any) => {
+        d3.select(event.currentTarget).style("fill", Colors.PRIMARY)
+        for(const id of this.nodesToHighlight[event.currentTarget.id]) {
+          this.svg.select("#" + id).style("fill", Colors.PRIMARY);
+        }
+      });
 
     const nodeLabel = this.svg.selectAll(".node-label")
       .data(nodes)
       .enter()
       .append("text")
+      .attr('id', (d: any) => d.id)
       .attr('class', 'node-label')
       .attr("dy", "0.3em")
       .attr("x", (d: any) => d.x)
@@ -418,8 +449,18 @@ export class SolutionGraphComponent implements AfterViewInit{
             d.fy = null;
           })
       )
-      .on("mouseover", (event: any) => d3.select(event.currentTarget).style("fill", Colors.SECONDARY))
-      .on("mouseout", (event: any) => d3.select(event.currentTarget).style("fill", Colors.PRIMARY));
+      .on("mouseover", (event: any) =>  {
+        d3.select(event.currentTarget).style("fill", Colors.SECONDARY);
+        for(const id of this.nodesToHighlight[event.currentTarget.id]) {
+          this.svg.select("#" + id).style("fill", Colors.SECONDARY);
+        }
+      })
+      .on("mouseout", (event: any) => {
+        d3.select(event.currentTarget).style("fill", Colors.PRIMARY)
+        for(const id of this.nodesToHighlight[event.currentTarget.id]) {
+          this.svg.select("#" + id).style("fill", Colors.PRIMARY);
+        }
+      });
 
     simulation.on("tick", function(e: any) {     
       nodeLabel

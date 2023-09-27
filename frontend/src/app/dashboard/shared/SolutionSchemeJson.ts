@@ -59,7 +59,7 @@ export interface ModelsPairModelObject<Type> {
 }
 
 export type EquationDependency = DependencyTemplate<ExpressionModelObject, ExpressionModelObject>;
-export type PolygonTypeDependency = DependencyTemplate<PolygonModelObject, PolygonTypeEnum>;
+export type PolygonTypeDependency = DependencyTemplate<IdHolderObject, PolygonModelObject>;
 export type PolygonExpressionDependency = DependencyTemplate<PolygonModelObject, ExpressionModelObject>;
 export type PointsPairsDependency = DependencyTemplate<PointsPairModelObject, PointsPairModelObject>;
 export type AnglesDependency = DependencyTemplate<AngleModelObject, AngleModelObject>;
@@ -90,9 +90,18 @@ export type Dependency =
 )
 
 export interface SolutionSchemeJson {
-    points: PointJson[],
-    lines: LineJson[],
-    cicles: CircleJson[],
+    points: {
+        object: PointJson,
+        position: number
+    }[],
+    lines: {
+        object: LineJson,
+        position: number
+    }[],
+    cicles: {
+        object: CircleJson,
+        position: number
+    }[],
     intersections: Intersections,
     indexes_of_variables: string[][],
     dependencies: Dependency[]
