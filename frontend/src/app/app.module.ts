@@ -38,6 +38,7 @@ import { SetAreaDialogComponent } from './dashboard/dialogs/setArea.component';
 import { EnterPolygonSidesNumberDialogComponent } from './dashboard/dialogs/enterPolygonSidesNumberDialog.component';
 import { SelectTriangleTypeDialogComponent } from './dashboard/dialogs/selectTriangleTypeDialog.component';
 import { SelectTrapezoidTypeDialogComponent } from './dashboard/dialogs/selectTrapezoidTypeDialog.component';
+import { EnterNameDialogComponent } from './dashboard/dialogs/enterName.component';
 
 
 @NgModule({
@@ -49,6 +50,7 @@ import { SelectTrapezoidTypeDialogComponent } from './dashboard/dialogs/selectTr
     DivideSegmentDialogComponent,
     DivideAngleDialogComponent,
     EnterFormulaDialogComponent,
+    EnterNameDialogComponent,
     SetSegmentLengthDialogComponent,
     SetAngleMeasureDialogComponent,
     AngleIsConvexDialogComponent,

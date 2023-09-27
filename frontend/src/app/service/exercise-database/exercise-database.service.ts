@@ -10,12 +10,12 @@ export class ExerciseDatabaseService {
 
   constructor(private http: HttpClient) {}
 
-  readExercise(filePath: string): Observable<string> {
+  readExercise(filePath: string): Observable<{exercise: string}> {
     const httpOptions = {
       headers: new HttpHeaders({ 'Content-Type': 'application/json' })
     };
 
-    return this.http.get<string>(`${this.baseUrl}/api/get-exercise?path=${filePath}`, httpOptions);
+    return this.http.get<{exercise: string}>(`${this.baseUrl}/api/get-exercise?path=${filePath}`, httpOptions);
   }
 
   writeExercise(filePath: string, data: string): Observable<any> {

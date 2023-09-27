@@ -26,6 +26,7 @@ export class Board {
     private currentGuideLines: [[any, number | null], [any, number | null]] = [[null, null], [null, null]];
 
     private boardScheme: BoardScheme;
+    private userActions: string[];
 
     constructor(
         private boardId: string, 
@@ -56,6 +57,7 @@ export class Board {
         this.currentGuideLines = [[null, null], [null, null]];
 
         this.boardScheme = new BoardScheme();
+        this.userActions = [];
 
         this.promptingShapes['point'] = this.board.create('point', [0, 0], { 
             visible: false,
@@ -141,7 +143,7 @@ export class Board {
         document.getElementById('jxgbox_navigation_right')!.addEventListener('click', () => { this.showFormulas(); });
     }
 
-    setAction(action: ActionEnum): void {
+    private setAction(action: ActionEnum): void {
         if(action == ActionEnum.ENTER_FORMULA) { 
             this.action = ActionEnum.NONE;
             this.addFormulaRequestData(); 
@@ -159,6 +161,8 @@ export class Board {
     }
 
     changeAction(action: ActionEnum): boolean {
+        this.userActions.push(`changeAction:${action}`);
+
         if(this.action == action) {
             this.setAction(ActionEnum.NONE);
             return false;
@@ -171,6 +175,33 @@ export class Board {
 
     getScheme(): BoardSchemeJson {  
         return this.boardScheme.get();
+    }
+
+    getUserActions(): string[] {
+        return [...this.userActions];
+    }
+
+    restoreBoard(userActions: string[]) {
+        for(const action of userActions) {
+            const actionTokens = action.split(':');
+            if(actionTokens.length === 0) { continue; }
+
+            if(actionTokens[0] == 'changeAction') {
+                this.changeAction(parseInt(actionTokens[1]));
+            }
+            else if(actionTokens[0] == 'handleBoardClickUtil') {
+                this.handleBoardClickUtil(parseFloat(actionTokens[1]), parseFloat(actionTokens[2]));
+            }
+            else if(actionTokens[0] == 'handlePointClickUtil') {
+                this.handlePointClickUtil(actionTokens[1]);
+            }
+            else if(actionTokens[0] == 'handleLineClickUtil') {
+                this.handleLineClickUtil(actionTokens[1], parseFloat(actionTokens[2]), parseFloat(actionTokens[3]));
+            }
+            else if(actionTokens[0] == 'handleCircleClickUtil') {
+                this.handleCircleClickUtil(actionTokens[1], parseFloat(actionTokens[2]), parseFloat(actionTokens[3]));
+            }
+        }
     }
 
     detach() {
@@ -1565,9 +1596,17 @@ export class Board {
 
         const x = coords[0];
         const y = coords[1];
-        const canBeCreated = coords[2];
-        const duplicationPoint = coords[3];
+        
+        this.handleBoardClickUtil(x, y);
+    }
+    
+    private handleBoardClickUtil(x: number, y: number) {
+        this.userActions.push(`handleBoardClickUtil:${x}:${y}}`);
 
+        const duplicationSearch = this.getDuplicationPoint(x, y);
+        var canBeCreated = duplicationSearch[0];
+        var duplicationPoint = duplicationSearch[1];
+        
         switch(this.action) {
             case ActionEnum.CREATE_POINT:
                 if(canBeCreated) { this.createPoint(x, y); }
@@ -1645,14 +1684,13 @@ export class Board {
             this.shapeClicked = true;
         }
 
-        //var coords = this.getCoords(event);
-        //if(this.currentGuideLines[0][1] !== null) { coords[0] = this.currentGuideLines[0][1]!; }
-        //if(this.currentGuideLines[1][1] !== null) { coords[1] = this.currentGuideLines[1][1]!; }
+        this.handlePointClickUtil(point.id);
+    }
 
-        //const x = coords[0];
-        //const y = coords[1];
-        //const canBeCreated = coords[2];
-        //const duplicationPoint = coords[3];
+    private handlePointClickUtil(pointId: string) {
+        this.userActions.push(`handlePointClickUtil:${pointId}`);
+
+        const point = this.getShapeById(pointId);
 
         switch(this.action) {
             case ActionEnum.CREATE_POINT:
@@ -1730,9 +1768,19 @@ export class Board {
 
         const x = coords[0];
         const y = coords[1];
-        const canBeCreated = coords[2];
-        const duplicationPoint = coords[3];
+        
+        this.handleLineClickUtil(line.id, x, y);
+    }
 
+    private handleLineClickUtil(lineId: string, x: number, y: number) {
+        this.userActions.push(`handleLineClickUtil:${lineId}:${x}:${y}`);
+
+        const duplicationSearch = this.getDuplicationPoint(x, y);
+        var canBeCreated = duplicationSearch[0];
+        var duplicationPoint = duplicationSearch[1];
+
+        const line = this.getShapeById(lineId);
+        
         switch(this.action) {
             case ActionEnum.CREATE_POINT:
                 if(canBeCreated) { this.createGliderPoint(x, y, line); }
@@ -1834,8 +1882,18 @@ export class Board {
 
         const x = coords[0];
         const y = coords[1];
-        const canBeCreated = coords[2];
-        const duplicationPoint = coords[3];
+
+        this.handleCircleClickUtil(circle.id, x, y);
+    }
+
+    private handleCircleClickUtil(circleId: string, x: number, y: number) {
+        this.userActions.push(`handleCircleClickUtil:${circleId}:${x}:${y}`);
+
+        const duplicationSearch = this.getDuplicationPoint(x, y);
+        var canBeCreated = duplicationSearch[0];
+        var duplicationPoint = duplicationSearch[1];
+
+        const circle = this.getShapeById(circleId);
 
         switch(this.action) {
             case ActionEnum.CREATE_POINT:
@@ -2146,7 +2204,7 @@ export class Board {
         return points.filter((point) => point.id == lastPointId).length > 1;
     }
 
-    private getCoords(event: any): [x: number, y: number, canBeCreated: boolean, duplication: any] {
+    private getCoords(event: any): [x: number, y: number] {
         var fingerIndex = undefined;
         if(event[JXG.touchProperty]) {
             fingerIndex = 0;
@@ -2155,18 +2213,26 @@ export class Board {
         var pos = this.board.getMousePosition(event, fingerIndex);
         var coords = new JXG.Coords(JXG.COORDS_BY_SCREEN, pos, this.board);
 
+        return [coords.usrCoords[1], coords.usrCoords[2]];
+    }
+
+    private getDuplicationPoint(x: number, y: number): [canBeCreated: boolean, duplicationPoint: any] {
         var canBeCreated = true;
         var duplication = undefined;
         for(const pointId of this.boardScheme.getActivePointIds()) {
             const point = this.board.objects[pointId];
-            if(point.hasPoint(coords.usrCoords[1], coords.usrCoords[2])) {
+            if(point.hasPoint(x, y)) {
                 canBeCreated = false;
                 duplication = point;
                 break;
             }
         }
 
-        return [coords.usrCoords[1], coords.usrCoords[2], canBeCreated, duplication];
+        return [canBeCreated, duplication];
+    }
+
+    private getShapeById(id: string): any {
+        return this.board.objects[id];
     }
 
     private correctIntersectionPoints(): any {

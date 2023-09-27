@@ -21,6 +21,7 @@ import { ProcessExerciseService } from '../service/process-exercise.service';
 import { SelectTriangleTypeDialogComponent } from './dialogs/selectTriangleTypeDialog.component';
 import { SelectTrapezoidTypeDialogComponent } from './dialogs/selectTrapezoidTypeDialog.component';
 import { ExerciseDatabaseService } from '../service/exercise-database/exercise-database.service';
+import { EnterNameDialogComponent } from './dialogs/enterName.component';
 
 
 @Component({
@@ -97,9 +98,6 @@ export class DashboardComponent {
         button.name,
         this._domSanitizer.bypassSecurityTrustResourceUrl(button.imagePath)
       ));
-
-      this._exerciseDatabaseServise.writeExercise("test", "testowe dane").subscribe((result)=>{ console.log(result); });
-      this._exerciseDatabaseServise.readExercise("test").subscribe((result => console.log(result)));
     }
 
   ngOnInit() {
@@ -237,6 +235,15 @@ export class DashboardComponent {
     });
   }
 
+  private enterExerciseNameDialog = (callback: (data: { stringValue: string }) => void): void => {
+    const dialogRef = this._dialog.open(EnterNameDialogComponent);
+
+    dialogRef.afterClosed().subscribe(result => {
+      if(result) { callback({ stringValue: result.stringInput }); }
+    });
+  }
+
+
   processExercise() {
     if(this.board === undefined) { return; }
 
@@ -260,11 +267,25 @@ export class DashboardComponent {
   }
 
   saveScheme() {
-    console.log(JSON.stringify(this.board?.getScheme()));
+    if(this.board === undefined) { return; }
+
+    const actionsString: string = this.board.getUserActions().join('\n');
+    this.enterExerciseNameDialog((name => {
+      this._exerciseDatabaseServise.writeExercise(name.stringValue, actionsString).subscribe((result => {
+        console.log(result);
+      }));
+    }));
   }
 
   loadScheme() {
-    console.log(JSON.stringify(this.board?.getScheme()));
+    this.enterExerciseNameDialog((name => {
+      this._exerciseDatabaseServise.readExercise(name.stringValue).subscribe((result => {
+        if(this.board !== undefined) { 
+          this.reinitializeBoard();
+          this.board.restoreBoard(result.exercise.split('\n')); 
+        }
+      }));
+    }));
   }
 
   reinitializeBoard() {
