@@ -20,6 +20,7 @@ import { EnterPolygonSidesNumberDialogComponent } from './dialogs/enterPolygonSi
 import { ProcessExerciseService } from '../service/process-exercise.service';
 import { SelectTriangleTypeDialogComponent } from './dialogs/selectTriangleTypeDialog.component';
 import { SelectTrapezoidTypeDialogComponent } from './dialogs/selectTrapezoidTypeDialog.component';
+import { ExerciseDatabaseService } from '../service/exercise-database/exercise-database.service';
 
 
 @Component({
@@ -87,13 +88,18 @@ export class DashboardComponent {
     private _domSanitizer: DomSanitizer,
     private _snackBar: MatSnackBar,
     public _dialog: MatDialog,
-    private _processExerciseService: ProcessExerciseService) { 
+    private _processExerciseService: ProcessExerciseService,
+    private _exerciseDatabaseServise: ExerciseDatabaseService
+    ) { 
       this.tabLabel = 'exercise';
       this.solutionIsLoading = false;
       this.actionButtons.forEach(button => this._matIconRegistry.addSvgIcon(
         button.name,
         this._domSanitizer.bypassSecurityTrustResourceUrl(button.imagePath)
       ));
+
+      this._exerciseDatabaseServise.writeExercise("test", "testowe dane").subscribe((result)=>{ console.log(result); });
+      this._exerciseDatabaseServise.readExercise("test").subscribe((result => console.log(result)));
     }
 
   ngOnInit() {
