@@ -165,7 +165,7 @@ export class Board {
     }
 
     changeAction(action: ActionEnum): boolean {
-        this.userActions.push(`changeAction:${action}`);
+        this.userActions.push(`changeAction@${action}`);
 
         if(this.action == action) {
             this.setAction(ActionEnum.NONE);

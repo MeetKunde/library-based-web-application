@@ -1,4 +1,0 @@
-changeAction:2
-changeAction:27
-handleBoardClickUtil:-59.54106280193237:-22.22222222222224}
-handleBoardClickUtil:-22.10144927536232:15.942028985507234}
