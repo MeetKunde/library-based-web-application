@@ -1,6 +1,6 @@
-import { AngleTypeEnum } from "./shared-enums/AngleTypeEnum"
-import { LineTypeEnum } from "./shared-enums/LineTypeEnum"
-import { PolygonTypeEnum } from "./shared-enums/PolygonTypeEnum"
+import { AngleTypeEnum } from "../shared/enums/AngleTypeEnum"
+import { LineTypeEnum } from "../shared/enums/LineTypeEnum"
+import { PolygonTypeEnum } from "../shared/enums/PolygonTypeEnum"
 
 export interface PointJson {
     id: string,
@@ -82,7 +82,8 @@ export interface TriangleCircleJson {
 }
 
 export interface PolygonTypeJson {
-    
+    polygonVerticesIds: string[],
+    polygonType: PolygonTypeEnum
 }
 
 export interface PolygonSegmentJson {
@@ -122,30 +123,4 @@ export interface PolygonPerimeterJson {
 export interface PolygonAreaJson {
     polygonVerticesIds: string[],
     area: string
-}
-
-export interface BoardSchemeJson {
-    points: PointJson[];
-    lines: LineJson[];
-    circles: CircleJson[];
-    perpendicularLines: LinesPairJson[];  
-    parallelLines: LinesPairJson[];   
-    equalSegments: SegmentsPairJson[];
-    equalAngles: AnglesPairJson[];
-    midPerpendiculars: SegmentLineJson[];
-    bisectors: AngleLineJson[]
-    tangentLines: LineCircleJson[];
-    tangentCircles: CirclesPairJson[];
-    circumscribedCircles: CirclePolygonJson[];
-    inscribedCircles: CirclePolygonJson[];
-    escribedCircles: TriangleCircleJson[];
-    polygonTypes: PolygonTypeJson[];
-    medians: PolygonSegmentJson[];
-    altitudes: PolygonSegmentJson[];
-    midSegments: PolygonSegmentJson[];
-    segmentLengths: SegmentLengthJson[];
-    angleMeasures: AngleMeasureJson[];
-    perimeters: PolygonPerimeterJson[];
-    areas: PolygonAreaJson[];
-    formulas: string[];
 }

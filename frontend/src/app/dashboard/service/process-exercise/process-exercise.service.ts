@@ -1,7 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
-import { BoardSchemeJson } from '../dashboard/board/BoardSchemeJson';
+import { BoardSchemeJson } from '../../shared/BoardSchemeJson';
 
 @Injectable({
   providedIn: 'root'

@@ -1,0 +1,13 @@
+export const NetworkSimulation = {
+    NODES_DISTANCE_MULTIPLIER: 0.5,
+    CHARGE_STRENGTH: -100,
+    LINK_WIDTH: 2,
+    NODE_LABEL_FONT_SIZE_MULTIPLIER: 0.03,
+    LINK_LABEL_FONT_SIZE_MULTIPLIER: 0.02
+}
+
+export const Colors = {
+    PRIMARY: '#2C3C5B',
+    SECONDARY: '#0AC5A8',
+    TERTIARY: '#D3D3D3'
+}

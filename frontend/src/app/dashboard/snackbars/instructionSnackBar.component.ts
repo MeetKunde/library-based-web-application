@@ -1,6 +1,6 @@
 import { Component, Inject } from '@angular/core';
 import { MatSnackBarRef, MAT_SNACK_BAR_DATA } from '@angular/material/snack-bar';
-import { ActionEnum } from '../board/ActionEnum';
+import { ActionEnum } from '../shared/enums/ActionEnum';
 
 
 @Component({

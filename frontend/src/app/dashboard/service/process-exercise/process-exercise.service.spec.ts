@@ -3,7 +3,7 @@ import { TestBed } from '@angular/core/testing';
 import { ProcessExerciseService } from './process-exercise.service';
 import { HttpClientModule } from '@angular/common/http';
 
-describe('ProcessExerciseServiceService', () => {
+describe('ProcessExerciseService', () => {
   let service: ProcessExerciseService;
 
   beforeEach(() => {

@@ -1,7 +1,8 @@
-import { AngleTypeEnum } from "./shared-enums/AngleTypeEnum";
-import { LineTypeEnum } from "./shared-enums/LineTypeEnum";
-import { PolygonTypeEnum } from "./shared-enums/PolygonTypeEnum";
-import { BoardSchemeJson, CircleJson, LineJson, PointJson } from "./BoardSchemeJson";
+import { LineTypeEnum } from "../shared/enums/LineTypeEnum";
+import { AngleTypeEnum } from "../shared/enums/AngleTypeEnum";
+import { PolygonTypeEnum } from "../shared/enums/PolygonTypeEnum";
+import { BoardSchemeJson } from "../shared/BoardSchemeJson";
+import { PointJson, LineJson, CircleJson } from "../shared/CommonJsons";
 
 type PointType = {obj: any, isActive: boolean, inactiveReason: string};
 type LineType = {obj: any, pointsOn: Set<string>};

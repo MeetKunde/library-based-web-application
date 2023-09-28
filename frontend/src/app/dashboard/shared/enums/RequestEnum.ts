@@ -1,4 +1,4 @@
-import { PolygonTypeEnum } from "./shared-enums/PolygonTypeEnum";
+import { PolygonTypeEnum } from "./PolygonTypeEnum";
 
 export enum RequestEnum {
     FORMULA,
