@@ -27,6 +27,8 @@ export class Board {
 
     private boardScheme: BoardScheme;
     private userActions: string[];
+    private userInputs: AnswearType[];
+    private exerciseIsRestoring: boolean;
 
     constructor(
         private boardId: string, 
@@ -34,7 +36,7 @@ export class Board {
         private maxBounds: [number, number, number, number], 
         private showAxis: boolean, 
         private keepAspectRatio: boolean, 
-        private requestDataFromUser: (requestType: RequestEnum, callback: (data: AnswearType) => void) => void
+        private requestDataFromUserUtil: (requestType: RequestEnum, callback: (data: AnswearType) => void) => void
     ) {
         
         this.board = JXG.JSXGraph.initBoard(boardId, { boundingbox: bounds, maxBoundingBox: maxBounds, showcopyright: false, axis: showAxis, keepAspectRatio: keepAspectRatio });
@@ -58,6 +60,8 @@ export class Board {
 
         this.boardScheme = new BoardScheme();
         this.userActions = [];
+        this.userInputs = [];
+        this.exerciseIsRestoring = false;
 
         this.promptingShapes['point'] = this.board.create('point', [0, 0], { 
             visible: false,
@@ -182,8 +186,20 @@ export class Board {
     }
 
     restoreBoard(userActions: string[]) {
+        this.userInputs = [];
         for(const action of userActions) {
-            const actionTokens = action.split(':');
+            const actionTokens = action.split('@');
+            if(actionTokens.length === 0) { continue; }
+
+            if(actionTokens[0] == 'userInput') {
+                this.userInputs.push(JSON.parse(actionTokens[1]));
+            }
+        }
+        this.userInputs.reverse();
+        this.exerciseIsRestoring = true;
+
+        for(const action of userActions) {
+            const actionTokens = action.split('@');
             if(actionTokens.length === 0) { continue; }
 
             if(actionTokens[0] == 'changeAction') {
@@ -202,6 +218,9 @@ export class Board {
                 this.handleCircleClickUtil(actionTokens[1], parseFloat(actionTokens[2]), parseFloat(actionTokens[3]));
             }
         }
+
+        this.exerciseIsRestoring = false;
+        this.userInputs = [];
     }
 
     detach() {
@@ -232,7 +251,19 @@ export class Board {
             const l = (this.lowercaseLettersCounter - 1) / Naming.LOWERCASE_LETTERS.length;
             return Naming.LOWERCASE_LETTERS[k] + '\''.repeat(l);
         }  
-    }       
+    }    
+    
+    private requestDataFromUser(requestType: RequestEnum, callback: (data: AnswearType) => void): void {
+        if(this.exerciseIsRestoring) {
+            callback(this.userInputs.pop()!)
+        }
+        else {
+            this.requestDataFromUserUtil(requestType, (data: AnswearType) => {
+                this.userActions.push(`userInput@${JSON.stringify(data)}`);
+                callback(data);
+            });
+        }
+    }
 
     private createPoint(x: number, y: number): any {
         const point = this.board.create('point', [x, y], { 
@@ -1601,7 +1632,7 @@ export class Board {
     }
     
     private handleBoardClickUtil(x: number, y: number) {
-        this.userActions.push(`handleBoardClickUtil:${x}:${y}}`);
+        this.userActions.push(`handleBoardClickUtil@${x}@${y}`);
 
         const duplicationSearch = this.getDuplicationPoint(x, y);
         var canBeCreated = duplicationSearch[0];
@@ -1688,7 +1719,7 @@ export class Board {
     }
 
     private handlePointClickUtil(pointId: string) {
-        this.userActions.push(`handlePointClickUtil:${pointId}`);
+        this.userActions.push(`handlePointClickUtil@${pointId}`);
 
         const point = this.getShapeById(pointId);
 
@@ -1773,7 +1804,7 @@ export class Board {
     }
 
     private handleLineClickUtil(lineId: string, x: number, y: number) {
-        this.userActions.push(`handleLineClickUtil:${lineId}:${x}:${y}`);
+        this.userActions.push(`handleLineClickUtil@${lineId}@${x}@${y}`);
 
         const duplicationSearch = this.getDuplicationPoint(x, y);
         var canBeCreated = duplicationSearch[0];
@@ -1887,7 +1918,7 @@ export class Board {
     }
 
     private handleCircleClickUtil(circleId: string, x: number, y: number) {
-        this.userActions.push(`handleCircleClickUtil:${circleId}:${x}:${y}`);
+        this.userActions.push(`handleCircleClickUtil@${circleId}@${x}@${y}`);
 
         const duplicationSearch = this.getDuplicationPoint(x, y);
         var canBeCreated = duplicationSearch[0];
