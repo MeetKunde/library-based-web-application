@@ -20,7 +20,7 @@ import { EnterPolygonSidesNumberDialogComponent } from './dialogs/enterPolygonSi
 import { ProcessExerciseService } from './service/process-exercise/process-exercise.service';
 import { SelectTriangleTypeDialogComponent } from './dialogs/selectTriangleTypeDialog.component';
 import { SelectTrapezoidTypeDialogComponent } from './dialogs/selectTrapezoidTypeDialog.component';
-import { ExerciseDatabaseService } from '../service/exercise-database/exercise-database.service';
+import { ExerciseDatabaseService } from './service/exercise-database/exercise-database.service';
 import { EnterNameDialogComponent } from './dialogs/enterName.component';
 import { DashboardTrafficService } from './service/dashboard-traffic/dashboard-traffic.service';
 import { ConfigureSolutionDialogComponent } from './dialogs/configureSolutionDialog.component';
@@ -71,8 +71,8 @@ export class DashboardComponent {
     {name: 'trapezoid', tooltip: 'Create Trapezoid', imagePath: '../../assets/button-images/TrapezoidIcon.svg', actionToDo: ()=> { this.board?.changeAction(ActionEnum.CREATE_TRAPEZOID); this.openInstructionSnackBar(); }, highlightButton: () => { return this.board?.getAction() == ActionEnum.CREATE_TRAPEZOID; }},
     {name: 'intersection', tooltip: 'Create Intersection Point', imagePath: '../../assets/button-images/IntersectionIcon.svg', actionToDo: ()=> { this.board?.changeAction(ActionEnum.CREATE_INTERSECTION); this.openInstructionSnackBar(); }, highlightButton: () => { return this.board?.getAction() == ActionEnum.CREATE_INTERSECTION; }},
     {name: 'process', tooltip: 'Process Exercise', imagePath: '../../assets/button-images/ProcessIcon.svg', actionToDo: () => { this.processExercise(); }, highlightButton: () => { return false; }},
-    //{name: 'save', tooltip: 'Save Exercise', imagePath: '../../assets/button-images/SaveIcon.svg', actionToDo: () => { this.saveScheme(); }, highlightButton: () => { return false; }},
-    //{name: 'load', tooltip: 'Load Exercise', imagePath: '../../assets/button-images/LoadIcon.svg', actionToDo: () => { this.loadScheme(); }, highlightButton: () => { return false; }},
+    {name: 'save', tooltip: 'Save Exercise', imagePath: '../../assets/button-images/SaveIcon.svg', actionToDo: () => { this.saveScheme(); }, highlightButton: () => { return false; }},
+    {name: 'load', tooltip: 'Load Exercise', imagePath: '../../assets/button-images/LoadIcon.svg', actionToDo: () => { this.loadScheme(); }, highlightButton: () => { return false; }},
     {name: 'clear', tooltip: 'Clear Board', imagePath: '../../assets/button-images/DeleteIcon.svg', actionToDo: () => { this.reinitializeBoard(); }, highlightButton: () => { return false; }},
   ];
 
