@@ -14,6 +14,8 @@ declare const d3: any;
 interface NodeStructure {
   id: string,
   title: string,
+  xCoord: number,
+  yCoord: number
 }
 
 interface LinkStructure {
@@ -78,16 +80,19 @@ export class SolutionGraphComponent implements AfterViewInit{
   }
 
   private getAllEnumImportances(): DependencyImportanceEnum[] {
-    return Object.keys(DependencyImportanceEnum).map(key => DependencyImportanceEnum[key as keyof typeof DependencyImportanceEnum]).filter(value => typeof value === 'number') as DependencyImportanceEnum[];
+    var result = Object.keys(DependencyImportanceEnum).map(key => DependencyImportanceEnum[key as keyof typeof DependencyImportanceEnum]).filter(value => typeof value === 'number') as DependencyImportanceEnum[];
+    return result.filter((dep) => dep != DependencyImportanceEnum.LOW);
   }
 
   private updateView(): void {
     if(SolutionGraphComponent.solution === null) {
-      this.createSolutionGraph([], []);
+      //this.createSolutionGraph([], []);
+      this.createSolutionDag([], []);
     }
     else {
-      this.createSolutionGraph(...this.preprocessSolution(SolutionGraphComponent.solution));
-    }
+      //this.createSolutionGraph(...this.preprocessSolution(SolutionGraphComponent.solution));
+      this.createSolutionDag(...this.preprocessSolution(SolutionGraphComponent.solution));
+    } 
   }
 
   private arraysIntersection<ArrayType>(arr1: ArrayType[], arr2: ArrayType[]): ArrayType[] {
@@ -111,7 +116,7 @@ export class SolutionGraphComponent implements AfterViewInit{
 
   private getAngleName(point1Id: string, vertexId: string, point2Id: string, angleType: AngleTypeEnum): string {
     switch(angleType) {
-      case AngleTypeEnum.UNKNOWN: return this.getPointName(point1Id) + this.getPointName(vertexId) + this.getPointName(point2Id);
+      case AngleTypeEnum.UNKNOWN: return "<>" + this.getPointName(point1Id) + this.getPointName(vertexId) + this.getPointName(point2Id);
       case AngleTypeEnum.CONVEX: return ">" + this.getPointName(point1Id) + this.getPointName(vertexId) + this.getPointName(point2Id);
       case AngleTypeEnum.CONCAVE: return "<" + this.getPointName(point1Id) + this.getPointName(vertexId) + this.getPointName(point2Id);
     }
@@ -123,8 +128,8 @@ export class SolutionGraphComponent implements AfterViewInit{
   }
 
   private getCircleName(circleId: string): string {
-    const circleCenter = SolutionGraphComponent.solution!.cicles.filter((circle) => circle.object.id === circleId)[0].object.centerId;
-    const pointsOnCircle = SolutionGraphComponent.solution!.cicles.filter((circle) => circle.object.id === circleId)[0].object.pointsOn;
+    const circleCenter = SolutionGraphComponent.solution!.circles.filter((circle) => circle.object.id === circleId)[0].object.centerId;
+    const pointsOnCircle = SolutionGraphComponent.solution!.circles.filter((circle) => circle.object.id === circleId)[0].object.pointsOn;
     return "O(" + this.getPointName(circleCenter) + "," + this.getPointName(pointsOnCircle[0]) + ")";
   }
 
@@ -156,6 +161,8 @@ export class SolutionGraphComponent implements AfterViewInit{
 
   private getDependencyName(dependecy: Dependency): string {
     switch(dependecy.type) {
+      case DependencyTypeEnum.EXERCISE_DESCRIPTION:
+        return "Exercise Description";
       case DependencyTypeEnum.SEGMENT_LENGTH:
          const segmentLength = dependecy as EquationDependency;
          return segmentLength.object1.value + " = " + segmentLength.object2.value;
@@ -170,14 +177,14 @@ export class SolutionGraphComponent implements AfterViewInit{
         return this.getPolygonName(polygonType.object2.verticesIds) + " is " + this.getPolygonTypeName(parseInt(polygonType.object1.id));  
       case DependencyTypeEnum.POLYGON_PERIMETER:
         const polygonPerimeter = dependecy as PolygonExpressionDependency;
-        return "P(" + this.getPolygonName(polygonPerimeter.object1.verticesIds) + ")" + polygonPerimeter.object2;
+        return "P(" + this.getPolygonName(polygonPerimeter.object1.verticesIds) + ") = " + polygonPerimeter.object2.value;
       case DependencyTypeEnum.POLYGON_AREA:
         const polygonArea = dependecy as PolygonExpressionDependency;
-        return "P(" + this.getPolygonName(polygonArea.object1.verticesIds) + ")" + polygonArea.object2;
+        return "A(" + this.getPolygonName(polygonArea.object1.verticesIds) + ") = " + polygonArea.object2.value;
       case DependencyTypeEnum.EQUAL_SEGMENTS:
         const equalSegments = dependecy as PointsPairsDependency;
-        return "|" + this.getSegmentName(equalSegments.object1.end1Id, equalSegments.object2.end2Id) + "| = " +
-          this.getSegmentName(equalSegments.object2.end1Id, equalSegments.object2.end2Id);
+        return "|" + this.getSegmentName(equalSegments.object1.end1Id, equalSegments.object1.end2Id) + "| = |" +
+          this.getSegmentName(equalSegments.object2.end1Id, equalSegments.object2.end2Id) + "|";
       case DependencyTypeEnum.EQUAL_ANGLES:
         const equalAngles = dependecy as AnglesDependency;
         return "|" + this.getAngleName(equalAngles.object1.point1Id, equalAngles.object1.vertexId, equalAngles.object1.point2Id, equalAngles.object1.type) +
@@ -199,7 +206,7 @@ export class SolutionGraphComponent implements AfterViewInit{
         return this.getLineName(bisectorLine.object1.id) + " is bisector of " + this.getAngleName(bisectorLine.object2.point1Id, bisectorLine.object2.vertexId, bisectorLine.object2.point2Id, bisectorLine.object2.type);
       case DependencyTypeEnum.MID_PERPENDICULAR_LINE:
         const midPerpendicular = dependecy as LinePointsPairDependency;
-        return this.getLineName(midPerpendicular.object1.id) + " is perpendicular of " + this.getSegmentName(midPerpendicular.object2.end1Id, midPerpendicular.object2.end2Id);
+        return this.getLineName(midPerpendicular.object1.id) + " is midperpendicular of " + this.getSegmentName(midPerpendicular.object2.end1Id, midPerpendicular.object2.end2Id);
       case DependencyTypeEnum.INSCRIBED_CIRCLE:
         const inscribedCircle = dependecy as CirclePolygonDependency;
         return this.getCircleName(inscribedCircle.object1.id) + " is inscribed in " + this.getPolygonName(inscribedCircle.object2.verticesIds);
@@ -287,6 +294,35 @@ export class SolutionGraphComponent implements AfterViewInit{
     }
   }
 
+  /*
+  private preprocessSolution(solution: SolutionSchemeJson): any {
+    const data = {
+      name: "Root",
+      level: 0,
+      children: [
+        {
+          name: "Node A",
+          level: 1,
+          children: [
+            { name: "Node A.1", level: 2 },
+            { name: "Node A.2", level: 2 }
+          ]
+        },
+        {
+          name: "Node B",
+          level: 1,
+          children: [
+            { name: "Node B.1", level: 3 },
+            { name: "Node B.2", level: 2 }
+          ]
+        }
+      ]
+    };
+
+    return data;
+  }
+*/
+  
   private preprocessSolution(solution: SolutionSchemeJson): [NodeStructure[], LinkStructure[]] {
     if(solution.dependencies === null) { return [[], []]; }
 
@@ -313,15 +349,36 @@ export class SolutionGraphComponent implements AfterViewInit{
           filteredDependencies.push(dependency);
       }
     }
+
+    filteredDependencies.sort((a, b) => a.id - b.id); 
     
-    var nodes: NodeStructure[] = [];
+    var nodes: NodeStructure[][] = [];
     var links: LinkStructure[] = [];
+    var depIdsInBuckets: number[][] = [];
+    var bucketsNumber = 0;
 
     for(const dependecy of filteredDependencies) {
-      nodes.push({
+      var targetBucketIndex = 0;
+      for(let i = 0; i < bucketsNumber; i++) {
+        if(this.arraysIntersection(depIdsInBuckets[i], dependecy.dependentDependencies.flat()).length > 0) {
+          targetBucketIndex = i+1;
+        }
+      }
+
+      if(nodes.length <= targetBucketIndex) {
+        nodes.push([]); 
+        depIdsInBuckets.push([]);
+        bucketsNumber++;
+      }
+  
+      nodes[targetBucketIndex].push({
         id: `node${dependecy.id}`, 
-        title: this.getDependencyName(dependecy), 
+        title: this.getDependencyName(dependecy),
+        xCoord: 0,
+        yCoord: 0
       });
+
+      depIdsInBuckets[targetBucketIndex].push(dependecy.id);
 
       var allRelatedNodes: string[] = [];
       var dependenciesToProcess: number[] = ([] as number[]).concat(...dependecy.dependentDependencies);
@@ -352,7 +409,55 @@ export class SolutionGraphComponent implements AfterViewInit{
       }
     }
 
-    return [nodes, links];
+    const bucketsCount = nodes.length;
+    var maxDepsCountInBucket = 0;
+    for(const bucket of nodes) { maxDepsCountInBucket = Math.max(maxDepsCountInBucket, bucket.length); }
+
+    for(let bucketIndex = 0; bucketIndex < nodes.length; bucketIndex++) {
+      const dependenciesCount = nodes[bucketIndex].length;
+      for(let dependecyIndex = 0; dependecyIndex< dependenciesCount; dependecyIndex++) {
+        nodes[bucketIndex][dependecyIndex].xCoord = (bucketIndex - bucketsCount / 2) * NetworkSimulation.NODE_TEXT_WIDTH;
+        nodes[bucketIndex][dependecyIndex].yCoord = (dependecyIndex - dependenciesCount / 2) * NetworkSimulation.NODE_TEXT_HEIGHT;
+      }
+    }
+
+    return [nodes.flat(), links];
+  }
+
+  private createSolutionDag(nodes: NodeStructure[], links: LinkStructure[]): void {
+    const width = this.element.nativeElement.offsetWidth;
+    const height = this.element.nativeElement.offsetHeight;
+
+    if(this.svg === null) {
+      var svgContainer = this.host.append("svg")
+        .attr("width", width)
+        .attr("height", height);
+
+      this.svg = svgContainer.append("g")
+        .attr("width", width)
+        .attr("height", height)
+        
+      svgContainer.call(d3.zoom().on('zoom', (e: any) => { this.svg.attr('transform', e.transform); }));
+    }
+    else {
+      this.svg.selectAll("*").remove();
+    }
+
+    console.log(nodes)
+
+    const nodeLabel = this.svg.selectAll(".node-label")
+      .data(nodes)
+      .enter()
+      .append("text")
+      .attr('id', (d: any) => d.id)
+      .attr('class', 'node-label')
+      .attr("dy", "0.3em")
+      .attr("x", (d: any) => d.xCoord)
+      .attr("y", (d: any) => d.yCoord)
+      .text((d: any) => d.title)
+      .attr("text-anchor", "middle")
+      .style("font-size", 13 + "px")
+      .style("fill", Colors.PRIMARY)
   }
 
   private createSolutionGraph(nodes: NodeStructure[], links: LinkStructure[]) {

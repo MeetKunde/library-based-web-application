@@ -632,10 +632,8 @@ export class Board {
         this.markEqualSegments(equalSegments);
 
         if(addDependencyToScheme) {
-            for(let i = 0; i < equalSegments.length; i++) {
-                for(let j = i + 1; j < equalSegments.length; j++) {
-                    this.boardScheme.addEqualSegments(...equalSegments[i], ...equalSegments[j]);
-                }
+            for(let i = 1; i < equalSegments.length; i++) {
+                this.boardScheme.addEqualSegments(...equalSegments[i - 1], ...equalSegments[i]);
             }
         }
 
@@ -689,10 +687,8 @@ export class Board {
         this.markEqualAngles(equalAngles);
 
         if(addDependencyToScheme) {
-            for(let i = 0; i < equalAngles.length; i++) {
-                for(let j = i + 1; j < equalAngles.length; j++) {
-                    this.boardScheme.addEqualAngles(...equalAngles[i], ...equalAngles[j]);
-                }
+            for(let i = 1; i < equalAngles.length; i++) {
+                this.boardScheme.addEqualAngles(...equalAngles[i - 1], ...equalAngles[i]);
             }
         }
 

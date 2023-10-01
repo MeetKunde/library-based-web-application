@@ -1,4 +1,5 @@
 export enum DependencyCategoryEnum {
+    EXERCISE_DESCRIPTION,
     FORMULA,
     POLYGON_TYPE,
     OF_POINTS_PAIRS,

@@ -98,7 +98,7 @@ export interface SolutionSchemeJson {
         object: LineJson,
         position: number
     }[],
-    cicles: {
+    circles: {
         object: CircleJson,
         position: number
     }[],

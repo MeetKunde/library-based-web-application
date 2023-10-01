@@ -410,7 +410,7 @@ export class BoardScheme {
             polygonTypes: this.polygonTypes.map((dependency) => ({  polygonVerticesIds: dependency[0], polygonType: dependency[1] })),
             medians: this.medians.map((dependency) => ({ polygonVerticesIds: dependency.slice(0, 3), segmentEnd1Id: dependency[3], segmentEnd2Id: dependency[4] })),
             altitudes: this.altitudes.map((dependency) => ({ polygonVerticesIds: dependency.slice(0, 3), segmentEnd1Id: dependency[3], segmentEnd2Id: dependency[4] })),
-            midSegments: this.midSegments.map((dependency) => ({ polygonVerticesIds: dependency.slice(0, 4), segmentEnd1Id: dependency[4], segmentEnd2Id: dependency[5] })),
+            midSegments: this.midSegments.map((dependency) => ({ polygonVerticesIds: Array.from(new Set<string>(dependency.slice(0, 4))), segmentEnd1Id: dependency[4], segmentEnd2Id: dependency[5] })),
             segmentLengths: this.segmentLengths.map((dependency) => ({ segmentEnd1Id: dependency[0], segmentEnd2Id: dependency[1], length: dependency[2] })),
             angleMeasures: this.angleMeasures.map((dependency) => ({ angleEnd1Id: dependency[0], angleVertexId: dependency[1], angleEnd2Id: dependency[2], angleIsConvex: dependency[3], measure: dependency[4] })),
             perimeters: this.perimeters.map((dependency) => ({ polygonVerticesIds: dependency[0], perimeter: dependency[1] })),

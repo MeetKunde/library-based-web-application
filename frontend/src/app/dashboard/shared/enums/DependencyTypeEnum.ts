@@ -1,4 +1,5 @@
 export enum DependencyTypeEnum {
+    EXERCISE_DESCRIPTION,
     SEGMENT_LENGTH,
     ANGLE_MEASURE,
     EQUATION,

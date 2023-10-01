@@ -64,7 +64,10 @@ export class ConfigureSolutionDialogComponent {
       }
 
       for(const importance of this.getEnumValues(DependencyImportanceEnum)) {
-        ConfigureSolutionDialogComponent.items[3].values.push({name: importance, checked: true})
+        if(importance == "LOW")
+          ConfigureSolutionDialogComponent.items[3].values.push({name: importance, checked: false})
+        else
+          ConfigureSolutionDialogComponent.items[3].values.push({name: importance, checked: true})
       }
 
       ConfigureSolutionDialogComponent.initialized = true;
