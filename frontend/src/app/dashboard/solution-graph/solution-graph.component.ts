@@ -13,16 +13,23 @@ declare const d3: any;
 
 interface NodeStructure {
   id: string,
+  category: DependencyCategoryEnum,
+  type: DependencyTypeEnum,
+  reasons: DependencyReasonEnum[],
+  importances: DependencyImportanceEnum[],
   title: string,
   xCoord: number,
   yCoord: number
 }
 
 interface LinkStructure {
-  id: string,
-  source: string,
-  target: string,
-  label: string
+  lineId: string,
+  labelId: string,
+  sourceId: string,
+  targetId: string,
+  label: string,
+  labelX: number,
+  labelY: number
 }
 
 @Component({
@@ -36,7 +43,8 @@ export class SolutionGraphComponent implements AfterViewInit{
   private host: any;
   private htmlElement: any;
   private svg: any = null;
-  private nodesToHighlight: { [linkOrNodeId: string] : string[]; } = {};
+  private nodesToHighlight: { [nodeId: string] : string[][]; } = {};
+  private linkLabelsToHighlight: { [nodeId: string] : string[][]; } = {};
 
   private static solution: SolutionSchemeJson | null;
   private static dependencyFeatures: [DependencyCategoryEnum[], DependencyTypeEnum[], DependencyReasonEnum[], DependencyImportanceEnum[]];
@@ -86,11 +94,9 @@ export class SolutionGraphComponent implements AfterViewInit{
 
   private updateView(): void {
     if(SolutionGraphComponent.solution === null) {
-      //this.createSolutionGraph([], []);
       this.createSolutionDag([], []);
     }
     else {
-      //this.createSolutionGraph(...this.preprocessSolution(SolutionGraphComponent.solution));
       this.createSolutionDag(...this.preprocessSolution(SolutionGraphComponent.solution));
     } 
   }
@@ -294,34 +300,49 @@ export class SolutionGraphComponent implements AfterViewInit{
     }
   }
 
-  /*
-  private preprocessSolution(solution: SolutionSchemeJson): any {
-    const data = {
-      name: "Root",
-      level: 0,
-      children: [
-        {
-          name: "Node A",
-          level: 1,
-          children: [
-            { name: "Node A.1", level: 2 },
-            { name: "Node A.2", level: 2 }
-          ]
-        },
-        {
-          name: "Node B",
-          level: 1,
-          children: [
-            { name: "Node B.1", level: 3 },
-            { name: "Node B.2", level: 2 }
-          ]
+  private topologicalSort(dependecies: Dependency[]): Dependency[] {
+    if(dependecies.length == 0) {
+      return [];
+    }
+
+    var graph = new Map<number, number[]>();
+
+    for(const dep of dependecies) {
+      for(const dependentDepId of dep.dependentDependencies.flat()) {
+        if(!graph.has(dependentDepId)) {
+          graph.set(dependentDepId, []);
         }
-      ]
+        graph.get(dependentDepId)!.push(dep.id);;
+      }
+    }
+
+    const visited: Set<number> = new Set<number>();
+    const stack: number[] = [];
+
+    const visit = (vertex: number) => {
+      visited.add(vertex);
+      const neighbors = graph.get(vertex) || [];
+      for(const neighbor of neighbors) {
+        if(!visited.has(neighbor)) {
+          visit(neighbor);
+        }
+      }
+      stack.push(vertex);
     };
 
-    return data;
+    for (const gKey of graph.keys()) {
+      if (!visited.has(gKey)) {
+        visit(gKey);
+      }
+    }
+
+    var sortedDependencies: Dependency[] = [];
+    for(let depId of stack.reverse()) {
+      sortedDependencies.push(dependecies.filter((d => d.id == depId))[0])
+    }
+
+    return sortedDependencies;
   }
-*/
   
   private preprocessSolution(solution: SolutionSchemeJson): [NodeStructure[], LinkStructure[]] {
     if(solution.dependencies === null) { return [[], []]; }
@@ -350,14 +371,15 @@ export class SolutionGraphComponent implements AfterViewInit{
       }
     }
 
-    filteredDependencies.sort((a, b) => a.id - b.id); 
+    filteredDependencies.sort((a, b) => a.id - b.id)
+    const sortedFilteredDependencies = this.topologicalSort(filteredDependencies); 
     
     var nodes: NodeStructure[][] = [];
     var links: LinkStructure[] = [];
     var depIdsInBuckets: number[][] = [];
     var bucketsNumber = 0;
 
-    for(const dependecy of filteredDependencies) {
+    for(const dependecy of sortedFilteredDependencies) {
       var targetBucketIndex = 0;
       for(let i = 0; i < bucketsNumber; i++) {
         if(this.arraysIntersection(depIdsInBuckets[i], dependecy.dependentDependencies.flat()).length > 0) {
@@ -373,6 +395,10 @@ export class SolutionGraphComponent implements AfterViewInit{
   
       nodes[targetBucketIndex].push({
         id: `node${dependecy.id}`, 
+        category: dependecy.category,
+        type: dependecy.type,
+        reasons: dependecy.reasons,
+        importances: dependecy.importances,
         title: this.getDependencyName(dependecy),
         xCoord: 0,
         yCoord: 0
@@ -380,31 +406,31 @@ export class SolutionGraphComponent implements AfterViewInit{
 
       depIdsInBuckets[targetBucketIndex].push(dependecy.id);
 
-      var allRelatedNodes: string[] = [];
-      var dependenciesToProcess: number[] = ([] as number[]).concat(...dependecy.dependentDependencies);
-      while(dependenciesToProcess.length > 0) {
-        const depId: number = dependenciesToProcess.pop()!;
-        allRelatedNodes.push(`node${depId}`);
-        const dep: Dependency = SolutionGraphComponent.solution?.dependencies.filter((d: Dependency) => d.id === depId)[0]!;
-        dependenciesToProcess.concat(...dep.dependentDependencies);
-      }
-      this.nodesToHighlight[`node${dependecy.id}`] = allRelatedNodes;
-
       for(let index = 0; index < dependecy.dependentDependencies.length; index++) {
         const dependentDependencyArr = dependecy.dependentDependencies[index];
         const reason = dependecy.reasons[index];
 
-        const allSources: string[] = dependentDependencyArr.map((dependentDependencyIndex: number) => `node${dependentDependencyIndex}`);
-        const allSourcesAndTarget = [...allSources, `node${dependecy.id}`];
-
         for(const dependentDependencyIndex of dependentDependencyArr) {
+          const lineId = `link${dependecy.id}_${dependentDependencyIndex}`;
+          const labelId = `text${dependecy.id}_${dependentDependencyIndex}`;
+          const sourceId = `node${dependentDependencyIndex}`;
+          const targetId = `node${dependecy.id}`;
+
           links.push({
-            id: `link${dependecy.id}@${dependentDependencyIndex}`,
-            source: `node${dependentDependencyIndex}`,
-            target: `node${dependecy.id}`,
+            lineId: lineId,
+            labelId: labelId,
+            sourceId: sourceId,
+            targetId: targetId,
             label: this.getReasonName(reason),
+            labelX: 0,
+            labelY: 0
           });
-          this.nodesToHighlight[`link${dependecy.id}@${dependentDependencyIndex}`] = allSourcesAndTarget;
+
+          if(!(targetId in this.nodesToHighlight)) { this.nodesToHighlight[targetId] = Array.from({ length: dependecy.dependentDependencies.length }, () => []); }
+          this.nodesToHighlight[targetId][index].push(sourceId);
+
+          if(!(targetId in this.linkLabelsToHighlight)) { this.linkLabelsToHighlight[targetId] = Array.from({ length: dependecy.reasons.length }, () => []); }
+          this.linkLabelsToHighlight[targetId][index].push(labelId);
         }
       }
     }
@@ -412,6 +438,8 @@ export class SolutionGraphComponent implements AfterViewInit{
     const bucketsCount = nodes.length;
     var maxDepsCountInBucket = 0;
     for(const bucket of nodes) { maxDepsCountInBucket = Math.max(maxDepsCountInBucket, bucket.length); }
+
+    for(let bucketIndex = 0; bucketIndex < bucketsCount; bucketIndex++) { nodes[bucketIndex].sort((a, b) => a.type - b.type) }
 
     for(let bucketIndex = 0; bucketIndex < nodes.length; bucketIndex++) {
       const dependenciesCount = nodes[bucketIndex].length;
@@ -421,13 +449,23 @@ export class SolutionGraphComponent implements AfterViewInit{
       }
     }
 
-    return [nodes.flat(), links];
+    const flattedNodes = nodes.flat();
+
+    for(const link of links) {
+      const sourceNode = flattedNodes.filter((n) => n.id == link.sourceId)[0];
+      const targetNode = flattedNodes.filter((n) => n.id == link.targetId)[0];
+
+      link.labelX = (sourceNode.xCoord + targetNode.xCoord) / 2;
+      link.labelY = (sourceNode.yCoord + targetNode.yCoord) / 2;
+    }
+
+    return [flattedNodes, links];
   }
 
   private createSolutionDag(nodes: NodeStructure[], links: LinkStructure[]): void {
     const width = this.element.nativeElement.offsetWidth;
     const height = this.element.nativeElement.offsetHeight;
-
+    
     if(this.svg === null) {
       var svgContainer = this.host.append("svg")
         .attr("width", width)
@@ -442,8 +480,6 @@ export class SolutionGraphComponent implements AfterViewInit{
     else {
       this.svg.selectAll("*").remove();
     }
-
-    console.log(nodes)
 
     const nodeLabel = this.svg.selectAll(".node-label")
       .data(nodes)
@@ -452,135 +488,80 @@ export class SolutionGraphComponent implements AfterViewInit{
       .attr('id', (d: any) => d.id)
       .attr('class', 'node-label')
       .attr("dy", "0.3em")
-      .attr("x", (d: any) => d.xCoord)
-      .attr("y", (d: any) => d.yCoord)
+      .attr("x", (d: any) => d.xCoord + width / 2)
+      .attr("y", (d: any) => d.yCoord + height / 2)
       .text((d: any) => d.title)
       .attr("text-anchor", "middle")
       .style("font-size", 13 + "px")
       .style("fill", Colors.PRIMARY)
-  }
+      .on("mouseover", (event: any) =>  {
+        d3.select(event.currentTarget).style("fill", Colors.SECONDARY);
 
-  private createSolutionGraph(nodes: NodeStructure[], links: LinkStructure[]) {
-    const width = this.element.nativeElement.offsetWidth;
-    const height = this.element.nativeElement.offsetHeight;
+        for(let index = 0; index < (this.linkLabelsToHighlight[event.currentTarget.id] || []).length; index++) {
+          for(const id of this.linkLabelsToHighlight[event.currentTarget.id][index] || []) {
+            this.svg.select("#" + id).style("display", "block");
+            this.svg.select("#" + id).style("fill", Colors.SELECTED_DEPENDENCIES_PATH_COLORS[index]);
+          }
+        }
 
-    const nodeLabelFontSize = Math.min(width, height) * NetworkSimulation.NODE_LABEL_FONT_SIZE_MULTIPLIER;
-    const linkLabelFontSize = Math.min(width, height) * NetworkSimulation.LINK_LABEL_FONT_SIZE_MULTIPLIER;
-    const nodesDistance = Math.min(width, height) * NetworkSimulation.NODES_DISTANCE_MULTIPLIER;
-
-    if(this.svg === null) {
-      var svgContainer = this.host.append("svg")
-        .attr("width", width)
-        .attr("height", height);
-
-      this.svg = svgContainer.append("g")
-        .attr("width", width)
-        .attr("height", height)
+        for(let index = 0; index < (this.nodesToHighlight[event.currentTarget.id] || []).length; index++) {
+          for(const id of this.nodesToHighlight[event.currentTarget.id][index] || []) {
+            this.svg.select("#" + id).style("fill", Colors.SELECTED_DEPENDENCIES_PATH_COLORS[index]);
+          }
+        }
+      })
+      .on("mouseout", (event: any) => {
+        d3.select(event.currentTarget).style("fill", Colors.PRIMARY)
         
-      svgContainer.call(d3.zoom().on('zoom', (e: any) => { this.svg.attr('transform', e.transform); }));
-    }
-    else {
-      this.svg.selectAll("*").remove();
-    }
-   
-    const simulation = d3
-      .forceSimulation(nodes)
-      .force('link', d3.forceLink(links).id((d: any) => d['id']).distance(nodesDistance))
-      .force('charge', d3.forceManyBody().strength(NetworkSimulation.CHARGE_STRENGTH))
-      .force('center', d3.forceCenter(width / 2, height / 2));
+        for(let index = 0; index < (this.linkLabelsToHighlight[event.currentTarget.id] || []).length; index++) {
+          for(const id of this.linkLabelsToHighlight[event.currentTarget.id][index] || []) {
+            this.svg.select("#" + id).style("display", "none");
+            this.svg.select("#" + id).style("fill", Colors.SELECTED_DEPENDENCIES_PATH_COLORS[index]);
+          }
+        }
+
+        for(let reasonIndex = 0; reasonIndex < (this.nodesToHighlight[event.currentTarget.id] || []).length; reasonIndex++) {
+          for(const id of this.nodesToHighlight[event.currentTarget.id][reasonIndex] || []) {
+            this.svg.select("#" + id).style("fill", Colors.PRIMARY);
+          }
+        }
+      });
 
     const linkLine = this.svg.selectAll(".link-line")
       .data(links)
       .enter()
-      .append("line")
+      .append("path")
       .attr('class', 'link-line')
-      .attr('id', (d:any) => d.id)
+      .attr('id', (d:any) => d.linkId)
       .attr("stroke", Colors.TERTIARY)
+      .attr("fill", 'none')
       .attr("stroke-width", NetworkSimulation.LINK_WIDTH + "px")
+      .attr("d", (d: any) =>
+        d3.linkHorizontal()({
+          source: [
+            this.svg.select("#"+d.sourceId).node().x.baseVal[0].value,
+            this.svg.select("#"+d.sourceId).node().y.baseVal[0].value
+          ],
+          target: [
+            this.svg.select("#"+d.targetId).node().x.baseVal[0].value,
+            this.svg.select("#"+d.targetId).node().y.baseVal[0].value
+          ]
+      }))
+      .lower();
 
     const linkLabel = this.svg.selectAll(".link-label")
       .data(links)
       .enter()
       .append("text")
-      .attr('id', (d: any) => d.id)
+      .attr('id', (d: any) => d.labelId)
       .attr('class', 'link-label')
       .attr("dy", ".3em")
-      .attr("x", function(d: any) { return (d.source.x + d.target.x)/2; })
-      .attr("y", function(d: any) { return (d.source.y + d.target.y)/2; })
+      .attr("x", function(d: any) { return d.labelX + width / 2; })
+      .attr("y", function(d: any) { return d.labelY + height / 2; })
       .text(function(d: any) { return d.label; })
       .attr("text-anchor", "middle")
-      .style("font-size", linkLabelFontSize + "px")
+      .style("font-size", 11 + "px")
       .style("fill", Colors.PRIMARY)
-      .on("mouseover", (event: any) => {
-        d3.select(event.currentTarget).style("fill", Colors.SECONDARY)
-        for(const id of this.nodesToHighlight[event.currentTarget.id]) {
-          this.svg.select("#" + id).style("fill", Colors.SECONDARY);
-        }
-      })
-      .on("mouseout", (event: any) => {
-        d3.select(event.currentTarget).style("fill", Colors.PRIMARY)
-        for(const id of this.nodesToHighlight[event.currentTarget.id]) {
-          this.svg.select("#" + id).style("fill", Colors.PRIMARY);
-        }
-      });
-
-    const nodeLabel = this.svg.selectAll(".node-label")
-      .data(nodes)
-      .enter()
-      .append("text")
-      .attr('id', (d: any) => d.id)
-      .attr('class', 'node-label')
-      .attr("dy", "0.3em")
-      .attr("x", (d: any) => d.x)
-      .attr("y", (d: any) => d.y)
-      .text((d: any) => d.title)
-      .attr("text-anchor", "middle")
-      .style("font-size", nodeLabelFontSize + "px")
-      .style("fill", Colors.PRIMARY)
-      .call(
-        d3.drag()
-          .on('start', (event: any, d: any) => {
-            if (!event.active) simulation.alphaTarget(0.3).restart();
-            d.fx = d.x;
-            d.fy = d.y;
-          })
-          .on('drag', (event: any, d: any) => {
-            d.fx = event.x;
-            d.fy = event.y;
-          })
-          .on('end', (event: any, d: any) => {
-            if (!event.active) simulation.alphaTarget(0);
-            d.fx = null;
-            d.fy = null;
-          })
-      )
-      .on("mouseover", (event: any) =>  {
-        d3.select(event.currentTarget).style("fill", Colors.SECONDARY);
-        for(const id of this.nodesToHighlight[event.currentTarget.id]) {
-          this.svg.select("#" + id).style("fill", Colors.SECONDARY);
-        }
-      })
-      .on("mouseout", (event: any) => {
-        d3.select(event.currentTarget).style("fill", Colors.PRIMARY)
-        for(const id of this.nodesToHighlight[event.currentTarget.id]) {
-          this.svg.select("#" + id).style("fill", Colors.PRIMARY);
-        }
-      });
-
-    simulation.on("tick", function(e: any) {     
-      nodeLabel
-        .attr("x", (d: any) => d.x)
-        .attr("y", (d: any) => d.y);
-
-      linkLine
-        .attr("x1", (d: any) => d.source.x)
-        .attr("y1", (d: any) => d.source.y)
-        .attr("x2", (d: any) => d.target.x)
-        .attr("y2", (d: any) => d.target.y);
-
-      linkLabel
-      .attr("x", function(d: any) { return (d.source.x + d.target.x)/2; })
-      .attr("y", function(d: any) { return (d.source.y + d.target.y)/2; });
-    });
+      .style("display", "none");
   }
 }
