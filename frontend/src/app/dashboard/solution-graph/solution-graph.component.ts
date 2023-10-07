@@ -306,6 +306,10 @@ export class SolutionGraphComponent implements AfterViewInit{
     }
 
     var graph = new Map<number, number[]>();
+    
+    for(const dep of dependecies) {
+      graph.set(dep.id, []);
+    }
 
     for(const dep of dependecies) {
       for(const dependentDepId of dep.dependentDependencies.flat()) {
@@ -399,7 +403,7 @@ export class SolutionGraphComponent implements AfterViewInit{
         type: dependecy.type,
         reasons: dependecy.reasons,
         importances: dependecy.importances,
-        title: this.getDependencyName(dependecy),
+        title: dependecy.id + ": " + this.getDependencyName(dependecy),
         xCoord: 0,
         yCoord: 0
       });
@@ -501,6 +505,7 @@ export class SolutionGraphComponent implements AfterViewInit{
           for(const id of this.linkLabelsToHighlight[event.currentTarget.id][index] || []) {
             this.svg.select("#" + id).style("display", "block");
             this.svg.select("#" + id).style("fill", Colors.SELECTED_DEPENDENCIES_PATH_COLORS[index]);
+            this.svg.select("#" + id).raise();
           }
         }
 
@@ -516,7 +521,6 @@ export class SolutionGraphComponent implements AfterViewInit{
         for(let index = 0; index < (this.linkLabelsToHighlight[event.currentTarget.id] || []).length; index++) {
           for(const id of this.linkLabelsToHighlight[event.currentTarget.id][index] || []) {
             this.svg.select("#" + id).style("display", "none");
-            this.svg.select("#" + id).style("fill", Colors.SELECTED_DEPENDENCIES_PATH_COLORS[index]);
           }
         }
 

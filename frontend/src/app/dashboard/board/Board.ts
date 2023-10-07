@@ -1777,7 +1777,7 @@ export class Board {
 
     private handleLineClick = (event: any, line: any): void => {
         for(const shape of this.board.getAllUnderMouse(event)) {
-            if(isPoint(shape)) {
+            if(isPoint(shape) || isIntersectionPoint(shape)) {
                 return; // point has higher priority than line
             }
         }
@@ -1888,7 +1888,7 @@ export class Board {
 
     private handleCircleClick = (event: any, circle: any): void => {
         for(const shape of this.board.getAllUnderMouse(event)) {
-            if(isPoint(shape)) {
+            if(isPoint(shape) || isIntersectionPoint(shape)) {
                 return; // point has higher priority than circle
             }
             else if(isLine(shape)) {
