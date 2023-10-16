@@ -1472,8 +1472,8 @@ export class Board {
 
     private showAngleMeasure(point1: any, point2: any, point3: any, isConvex: boolean, value: string): void {
         var name = '';
-        if(isConvex) { name = '<|' + point1.name + point2.name + point3.name + '| = ' + value; }
-        else { { name = '>|' + point1.name + point2.name + point3.name + '| = ' + value; } }
+        if(isConvex) { name = '|)' + point1.name + point2.name + point3.name + '| = ' + value; }
+        else { { name = '|(' + point1.name + point2.name + point3.name + '| = ' + value; } }
 
         this.board.create('text', [
             xCoord(point2), 
