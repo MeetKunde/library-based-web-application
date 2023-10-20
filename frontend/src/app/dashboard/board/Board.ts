@@ -986,6 +986,7 @@ export class Board {
         const altitude = this.createSegment(vertexPoint, spotPoint);
         this.markRightAngle(vertexPoint, spotPoint, basePoints[0]);
         this.boardScheme.addAltitude(vertexPoint, ...basePoints, vertexPoint, spotPoint);
+        this.boardScheme.addPointToShape(line, spotPoint);
 
         return altitude;
     }

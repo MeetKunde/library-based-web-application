@@ -297,6 +297,7 @@ export class SolutionGraphComponent implements AfterViewInit{
       case DependencyReasonEnum.FUNDAMENTAL_THEORY_OF_GEOMETRY: return "fundamental theory of geometry";
       case DependencyReasonEnum.LINE_TANGENT_TO_CIRCLE: return "line tangent to circle";
       case DependencyReasonEnum.EQUATION_EXTRACTION: return "algebraic calculations";
+      case DependencyReasonEnum.SUM_OF_ANGLES_AT_TRAPEZOID_ARM: return "sum of angles by trapezoid arm";
     }
   }
 
@@ -353,6 +354,7 @@ export class SolutionGraphComponent implements AfterViewInit{
 
     console.log(solution)
 
+    /*
     var dependentDependenciesSet = new Set<number>();
     for(const dependency of solution.dependencies) {
       dependency.dependentDependencies.forEach((dd: number[]) => dd.forEach((id: number) => dependentDependenciesSet.add(id)));
@@ -372,6 +374,35 @@ export class SolutionGraphComponent implements AfterViewInit{
         this.arraysIntersection<DependencyReasonEnum>(SolutionGraphComponent.dependencyFeatures[2], reasons).length > 0 &&
         this.arraysIntersection<DependencyImportanceEnum>(SolutionGraphComponent.dependencyFeatures[3], importances).length > 0) {
           filteredDependencies.push(dependency);
+      }
+    }
+    */
+
+    var allDependencies = solution.dependencies;
+    allDependencies.sort((a, b) => a.id - b.id);
+    allDependencies = this.topologicalSort(allDependencies);
+    var allDependenciesReversed = allDependencies.reverse();
+
+    var filteredDependencies: Dependency[] = [];
+
+    var dependentDependenciesSet = new Set<number>();
+    for(let i = 0; i < allDependenciesReversed.length; i++) {
+      const dependency = allDependenciesReversed[i];
+
+      const category: DependencyCategoryEnum = dependency.category;
+      const type: DependencyTypeEnum = dependency.type;
+      const reasons: DependencyReasonEnum[] = dependency.reasons;
+      const importances: DependencyImportanceEnum[] = dependency.importances;
+
+      if(dependentDependenciesSet.has(dependency.id)) {
+        filteredDependencies.push(dependency)
+        dependency.dependentDependencies.forEach((dd: number[]) => dd.forEach((id: number) => dependentDependenciesSet.add(id)));
+      }
+      else if(SolutionGraphComponent.dependencyFeatures[0].includes(category) && SolutionGraphComponent.dependencyFeatures[1].includes(type) &&
+        this.arraysIntersection<DependencyReasonEnum>(SolutionGraphComponent.dependencyFeatures[2], reasons).length > 0 &&
+        this.arraysIntersection<DependencyImportanceEnum>(SolutionGraphComponent.dependencyFeatures[3], importances).length > 0) {
+          filteredDependencies.push(dependency);
+          dependency.dependentDependencies.forEach((dd: number[]) => dd.forEach((id: number) => dependentDependenciesSet.add(id)));
       }
     }
 
@@ -403,7 +434,7 @@ export class SolutionGraphComponent implements AfterViewInit{
         type: dependecy.type,
         reasons: dependecy.reasons,
         importances: dependecy.importances,
-        title: dependecy.id + ": " + this.getDependencyName(dependecy),
+        title: this.getDependencyName(dependecy),
         xCoord: 0,
         yCoord: 0
       });

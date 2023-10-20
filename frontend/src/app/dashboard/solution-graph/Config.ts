@@ -12,7 +12,7 @@ export const NetworkSimulation = {
 export const Colors = {
     PRIMARY: '#2C3C5B',
     SECONDARY: '#0AC5A8',
-    TERTIARY: '#D3D3D3',
+    TERTIARY: '#F2F2F2',
     SELECTED_DEPENDENCIES_PATH_COLORS: [
         '#008000',
         '#D2691E',
